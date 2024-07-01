@@ -39,10 +39,36 @@ test('behavior: not connected', async () => {
   await expect(
     getConnectorClient(config),
   ).rejects.toThrowErrorMatchingInlineSnapshot(`
-    "Connector not connected.
+    [ConnectorNotConnectedError: Connector not connected.
 
-    Version: @wagmi/core@x.y.z"
+    Version: @wagmi/core@x.y.z]
   `)
+})
+
+test('behavior: connector is on different chain', async () => {
+  await connect(config, { chainId: 1, connector })
+  config.setState((state) => {
+    const uid = state.current!
+    const connection = state.connections.get(uid)!
+    return {
+      ...state,
+      connections: new Map(state.connections).set(uid, {
+        ...connection,
+        chainId: 456,
+      }),
+    }
+  })
+  await expect(
+    getConnectorClient(config, { account: address.usdcHolder }),
+  ).rejects.toThrowErrorMatchingInlineSnapshot(`
+    [ConnectorChainMismatchError: The current chain of the connector (id: 1) does not match the connection's chain (id: 456).
+
+    Current Chain ID:  1
+    Expected Chain ID: 456
+
+    Version: @wagmi/core@x.y.z]
+  `)
+  await disconnect(config, { connector })
 })
 
 test('behavior: account does not exist on connector', async () => {
@@ -50,9 +76,9 @@ test('behavior: account does not exist on connector', async () => {
   await expect(
     getConnectorClient(config, { account: address.usdcHolder }),
   ).rejects.toThrowErrorMatchingInlineSnapshot(`
-    "Account \\"0x5414d89a8bF7E99d732BC52f3e6A3Ef461c0C078\\" not found for connector \\"Mock Connector\\".
+    [ConnectorAccountNotFoundError: Account "0x5414d89a8bF7E99d732BC52f3e6A3Ef461c0C078" not found for connector "Mock Connector".
 
-    Version: @wagmi/core@x.y.z"
+    Version: @wagmi/core@x.y.z]
   `)
   await disconnect(config, { connector })
 })

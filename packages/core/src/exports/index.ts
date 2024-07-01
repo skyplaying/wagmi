@@ -2,6 +2,7 @@
 // Actions
 ////////////////////////////////////////////////////////////////////////////////
 
+// biome-ignore lint/performance/noBarrelFile: entrypoint module
 export {
   type CallErrorType,
   type CallParameters,
@@ -15,6 +16,13 @@ export {
   type ConnectReturnType,
   connect,
 } from '../actions/connect.js'
+
+export {
+  type DeployContractErrorType,
+  type DeployContractParameters,
+  type DeployContractReturnType,
+  deployContract,
+} from '../actions/deployContract.js'
 
 export {
   type DisconnectErrorType,
@@ -481,6 +489,8 @@ export {
   ConnectorNotFoundError,
   type ConnectorAccountNotFoundErrorType,
   ConnectorAccountNotFoundError,
+  type ConnectorChainMismatchErrorType,
+  ConnectorChainMismatchError,
 } from '../errors/config.js'
 
 export {
@@ -496,7 +506,11 @@ export {
 
 export { custom, http, webSocket } from 'viem'
 
-export { unstable_connector } from '../transports/connector.js'
+export {
+  type ConnectorTransportConfig,
+  type ConnectorTransport,
+  unstable_connector,
+} from '../transports/connector.js'
 
 export { fallback } from '../transports/fallback.js'
 

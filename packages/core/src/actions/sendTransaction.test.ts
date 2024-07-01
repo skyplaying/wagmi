@@ -29,9 +29,9 @@ test('behavior: connector not connected', async () => {
       value: parseEther('0.01'),
     }),
   ).rejects.toThrowErrorMatchingInlineSnapshot(`
-    "Connector not connected.
+    [ConnectorNotConnectedError: Connector not connected.
 
-    Version: @wagmi/core@x.y.z"
+    Version: @wagmi/core@x.y.z]
   `)
   await disconnect(config, { connector })
 })
@@ -45,9 +45,9 @@ test('behavior: account does not exist on connector', async () => {
       value: parseEther('0.01'),
     }),
   ).rejects.toThrowErrorMatchingInlineSnapshot(`
-    "Account \\"0xA0Cf798816D4b9b9866b5330EEa46a18382f251e\\" not found for connector \\"Mock Connector\\".
+    [ConnectorAccountNotFoundError: Account "0xA0Cf798816D4b9b9866b5330EEa46a18382f251e" not found for connector "Mock Connector".
 
-    Version: @wagmi/core@x.y.z"
+    Version: @wagmi/core@x.y.z]
   `)
   await disconnect(config, { connector })
 })
@@ -60,7 +60,7 @@ test('behavior: value exceeds balance', async () => {
       value: parseEther('99999'),
     }),
   ).rejects.toThrowErrorMatchingInlineSnapshot(`
-    "The total cost (gas * gas fee + value) of executing this transaction exceeds the balance of the account.
+    [TransactionExecutionError: The total cost (gas * gas fee + value) of executing this transaction exceeds the balance of the account.
 
     This error could arise when the account does not have enough funds to:
      - pay for the total gas fee,
@@ -75,10 +75,9 @@ test('behavior: value exceeds balance', async () => {
       from:   0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
       to:     0xd2135CfB216b74109775236E36d4b433F1DF507B
       value:  99999 ETH
-      gas:    21000
 
     Details: Insufficient funds for gas * price + value
-    Version: viem@2.8.4"
+    Version: viem@2.9.31]
   `)
   await disconnect(config, { connector })
 })

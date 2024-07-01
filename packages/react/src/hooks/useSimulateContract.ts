@@ -14,10 +14,7 @@ import {
 } from '@wagmi/core/query'
 import type { Abi, ContractFunctionArgs, ContractFunctionName } from 'viem'
 
-import {
-  type ConfigParameter,
-  type QueryParameter,
-} from '../types/properties.js'
+import type { ConfigParameter, QueryParameter } from '../types/properties.js'
 import { type UseQueryReturnType, useQuery } from '../utils/query.js'
 import { useChainId } from './useChainId.js'
 import { useConfig } from './useConfig.js'
@@ -98,7 +95,7 @@ export function useSimulateContract<
     connector,
     query: { enabled: parameters.account === undefined },
   })
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = simulateContractQueryOptions<
     config,

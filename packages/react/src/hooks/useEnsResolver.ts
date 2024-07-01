@@ -5,7 +5,7 @@ import type {
   GetEnsResolverErrorType,
   ResolvedRegister,
 } from '@wagmi/core'
-import { type Evaluate } from '@wagmi/core/internal'
+import type { Evaluate } from '@wagmi/core/internal'
 import {
   type GetEnsResolverData,
   type GetEnsResolverOptions,
@@ -46,7 +46,7 @@ export function useEnsResolver<
   const { name, query = {} } = parameters
 
   const config = useConfig(parameters)
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = getEnsResolverQueryOptions(config, {
     ...parameters,

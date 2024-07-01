@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { execa, execaCommandSync } from 'execa'
+import { fdir } from 'fdir'
 import { default as fs } from 'fs-extra'
-import { globby } from 'globby'
 
 import { basename, extname, join, resolve } from 'pathe'
 import pc from 'picocolors'
@@ -12,21 +12,33 @@ import * as logger from '../logger.js'
 import type { Evaluate, RequiredBy } from '../types.js'
 
 const defaultExcludes = [
+  'Base.sol/**',
   'Common.sol/**',
   'Components.sol/**',
+  'IERC165.sol/**',
+  'IERC20.sol/**',
+  'IERC721.sol/**',
+  'IMulticall2.sol/**',
+  'MockERC20.sol/**',
+  'MockERC721.sol/**',
   'Script.sol/**',
   'StdAssertions.sol/**',
-  'StdInvariant.sol/**',
-  'StdError.sol/**',
+  'StdChains.sol/**',
   'StdCheats.sol/**',
-  'StdMath.sol/**',
+  'StdError.sol/**',
+  'StdInvariant.sol/**',
   'StdJson.sol/**',
+  'StdMath.sol/**',
   'StdStorage.sol/**',
+  'StdStyle.sol/**',
+  'StdToml.sol/**',
   'StdUtils.sol/**',
+  'Test.sol/**',
   'Vm.sol/**',
+  'build-info/**',
   'console.sol/**',
   'console2.sol/**',
-  'test.sol/**',
+  'safeconsole.sol/**',
   '**.s.sol/*.json',
   '**.t.sol/*.json',
 ]
@@ -124,10 +136,13 @@ export function foundry(config: FoundryConfig = {}): FoundryResult {
   }
 
   async function getArtifactPaths(artifactsDirectory: string) {
-    return await globby([
-      ...include.map((x) => `${artifactsDirectory}/**/${x}`),
-      ...exclude.map((x) => `!${artifactsDirectory}/**/${x}`),
-    ])
+    const crawler = new fdir()
+      .withBasePath()
+      .glob(
+        ...include.map((x) => `${artifactsDirectory}/**/${x}`),
+        ...exclude.map((x) => `!${artifactsDirectory}/**/${x}`),
+      )
+    return crawler.crawl(artifactsDirectory).withPromise()
   }
 
   const project = resolve(process.cwd(), config.project ?? '')

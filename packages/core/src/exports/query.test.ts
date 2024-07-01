@@ -8,6 +8,7 @@ test('exports', () => {
       "callQueryKey",
       "callQueryOptions",
       "connectMutationOptions",
+      "deployContractMutationOptions",
       "disconnectMutationOptions",
       "estimateFeesPerGasQueryKey",
       "estimateFeesPerGasQueryOptions",
@@ -81,6 +82,7 @@ test('exports', () => {
       "waitForTransactionReceiptQueryOptions",
       "writeContractMutationOptions",
       "hashFn",
+      "structuralSharing",
     ]
   `)
 })

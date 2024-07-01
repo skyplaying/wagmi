@@ -1,5 +1,23 @@
 # create-wagmi
 
+## 2.0.13
+
+### Patch Changes
+
+- [#4060](https://github.com/wevm/wagmi/pull/4060) [`95965c1f19d480b97f2b297a077a9e607dee32ad`](https://github.com/wevm/wagmi/commit/95965c1f19d480b97f2b297a077a9e607dee32ad) Thanks [@dalechyn](https://github.com/dalechyn)! - Bumped Tanstack Query dependencies to fix typing issues between exported Wagmi query options and TanStack Query suspense query methods (due to [`direction` property in `QueryFunctionContext` being deprecated](https://github.com/TanStack/query/pull/7410)).
+
+## 2.0.12
+
+### Patch Changes
+
+- [`c00303d0c5909680b3124f92c0a2d2f31ea30405`](https://github.com/wevm/wagmi/commit/c00303d0c5909680b3124f92c0a2d2f31ea30405) Thanks [@tmm](https://github.com/tmm)! - Bumped Next.js version
+
+## 2.0.11
+
+### Patch Changes
+
+- [#3871](https://github.com/wevm/wagmi/pull/3871) [`0e6bd286`](https://github.com/wevm/wagmi/commit/0e6bd286ca2572d2bfbe206db460528b7c2ebc63) Thanks [@jxom](https://github.com/jxom)! - Added `.npmrc` with `legacy-peer-deps = true` to templates.
+
 ## 2.0.10
 
 ### Patch Changes

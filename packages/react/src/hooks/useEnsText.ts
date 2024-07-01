@@ -1,7 +1,7 @@
 'use client'
 
 import type { Config, GetEnsTextErrorType, ResolvedRegister } from '@wagmi/core'
-import { type Evaluate } from '@wagmi/core/internal'
+import type { Evaluate } from '@wagmi/core/internal'
 import {
   type GetEnsTextData,
   type GetEnsTextOptions,
@@ -42,7 +42,7 @@ export function useEnsText<
   const { key, name, query = {} } = parameters
 
   const config = useConfig(parameters)
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = getEnsTextQueryOptions(config, {
     ...parameters,

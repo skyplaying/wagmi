@@ -1,9 +1,11 @@
+// biome-ignore lint/performance/noBarrelFile: entrypoint module
 export { chain, mainnet, mainnet2, optimism } from '../chains.js'
 
 export {
   abi,
-  address,
   accounts,
+  address,
+  bytecode,
   privateKey,
   typedData,
   walletConnectProjectId,

@@ -9,7 +9,7 @@ import type {
   GetWalletClientErrorType,
   ResolvedRegister,
 } from '@wagmi/core'
-import { type Evaluate, type Omit } from '@wagmi/core/internal'
+import type { Evaluate, Omit } from '@wagmi/core/internal'
 import {
   type GetWalletClientData,
   type GetWalletClientOptions,
@@ -31,7 +31,8 @@ import { useConfig } from './useConfig.js'
 
 export type UseWalletClientParameters<
   config extends Config = Config,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   selectData = GetWalletClientData<config, chainId>,
 > = Evaluate<
   GetWalletClientOptions<config, chainId> &
@@ -54,14 +55,16 @@ export type UseWalletClientParameters<
 
 export type UseWalletClientReturnType<
   config extends Config = Config,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   selectData = GetWalletClientData<config, chainId>,
 > = UseQueryReturnType<selectData, GetWalletClientErrorType>
 
 /** https://wagmi.sh/react/api/hooks/useWalletClient */
 export function useWalletClient<
   config extends Config = ResolvedRegister['config'],
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   selectData = GetWalletClientData<config, chainId>,
 >(
   parameters: UseWalletClientParameters<config, chainId, selectData> = {},
@@ -70,8 +73,8 @@ export function useWalletClient<
 
   const config = useConfig(rest)
   const queryClient = useQueryClient()
-  const { address, connector, status } = useAccount()
-  const chainId = useChainId()
+  const { address, connector, status } = useAccount({ config })
+  const chainId = useChainId({ config })
 
   const { queryKey, ...options } = getWalletClientQueryOptions<config, chainId>(
     config,
@@ -84,7 +87,7 @@ export function useWalletClient<
   const enabled = Boolean(status !== 'disconnected' && (query.enabled ?? true))
 
   const addressRef = useRef(address)
-  // biome-ignore lint/nursery/useExhaustiveDependencies: `queryKey` not required
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `queryKey` not required
   useEffect(() => {
     const previousAddress = addressRef.current
     if (!address && previousAddress) {
@@ -103,6 +106,6 @@ export function useWalletClient<
     ...options,
     queryKey,
     enabled,
-    staleTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
   } as any) as UseWalletClientReturnType<config, chainId, selectData>
 }

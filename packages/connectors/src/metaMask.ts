@@ -1,91 +1,72 @@
-import {
-  EventType,
-  type MetaMaskSDK,
-  type MetaMaskSDKOptions,
-  type SDKProvider,
+import type {
+  MetaMaskSDK,
+  MetaMaskSDKOptions,
+  SDKProvider,
 } from '@metamask/sdk'
-import { ChainNotConfiguredError, createConnector } from '@wagmi/core'
-import type { Evaluate, ExactPartial, Omit } from '@wagmi/core/internal'
 import {
+  ChainNotConfiguredError,
+  type Connector,
+  createConnector,
+} from '@wagmi/core'
+import type { Evaluate, ExactPartial } from '@wagmi/core/internal'
+import {
+  type AddEthereumChainParameter,
   type Address,
   type ProviderConnectInfo,
   type ProviderRpcError,
   ResourceUnavailableRpcError,
-  RpcError,
+  type RpcError,
   SwitchChainError,
   UserRejectedRequestError,
-  type WalletPermission,
   getAddress,
   numberToHex,
+  withRetry,
+  withTimeout,
 } from 'viem'
 
 export type MetaMaskParameters = Evaluate<
-  ExactPartial<
-    Omit<
-      MetaMaskSDKOptions,
-      | 'checkInstallationImmediately'
-      | 'checkInstallationOnAllCalls'
-      | 'defaultReadOnlyChainId'
-      | 'readonlyRPCMap'
-    >
-  >
+  ExactPartial<Omit<MetaMaskSDKOptions, '_source' | 'readonlyRPCMap'>>
 >
 
 metaMask.type = 'metaMask' as const
-/**
- * @deprecated
- *
- * __Warning__ This connector has a large file size due to the underlying `@metamask/sdk`. For mobile
- * support, it is recommended to use {@link walletConnect}. For desktop support, you should rely on Multi Injected
- * Provider Discovery (EIP-6963) via the Wagmi {@link Config}.
- */
 export function metaMask(parameters: MetaMaskParameters = {}) {
   type Provider = SDKProvider
   type Properties = {
     onConnect(connectInfo: ProviderConnectInfo): void
+    onDisplayUri(uri: string): void
   }
-  type StorageItem = { 'metaMaskSDK.disconnected': true }
   type Listener = Parameters<Provider['on']>[1]
 
   let sdk: MetaMaskSDK
-  let walletProvider: Provider | undefined
+  let provider: Provider | undefined
+  let providerPromise: Promise<typeof provider>
 
-  return createConnector<Provider, Properties, StorageItem>((config) => ({
+  let accountsChanged: Connector['onAccountsChanged'] | undefined
+  let chainChanged: Connector['onChainChanged'] | undefined
+  let connect: Connector['onConnect'] | undefined
+  let displayUri: ((uri: string) => void) | undefined
+  let disconnect: Connector['onDisconnect'] | undefined
+
+  return createConnector<Provider, Properties>((config) => ({
     id: 'metaMaskSDK',
     name: 'MetaMask',
     type: metaMask.type,
     async setup() {
       const provider = await this.getProvider()
-      if (provider)
-        provider.on('connect', this.onConnect.bind(this) as Listener)
+      if (provider && !connect) {
+        connect = this.onConnect.bind(this)
+        provider.on('connect', connect as Listener)
+      }
     },
     async connect({ chainId, isReconnecting } = {}) {
       const provider = await this.getProvider()
-
-      let accounts: readonly Address[] | null = null
-      if (!isReconnecting) {
-        accounts = await this.getAccounts().catch(() => null)
-        const isAuthorized = !!accounts?.length
-        if (isAuthorized)
-          // Attempt to show another prompt for selecting account if already connected
-          try {
-            const permissions = (await provider.request({
-              method: 'wallet_requestPermissions',
-              params: [{ eth_accounts: {} }],
-            })) as WalletPermission[]
-            accounts = (permissions[0]?.caveats?.[0]?.value as string[])?.map(
-              (x) => getAddress(x),
-            )
-          } catch (err) {
-            const error = err as RpcError
-            // Not all injected providers support `wallet_requestPermissions` (e.g. MetaMask iOS).
-            // Only bubble up error if user rejects request
-            if (error.code === UserRejectedRequestError.code)
-              throw new UserRejectedRequestError(error)
-            // Or prompt is already open
-            if (error.code === ResourceUnavailableRpcError.code) throw error
-          }
+      if (!displayUri) {
+        displayUri = this.onDisplayUri
+        provider.on('display_uri', displayUri as Listener)
       }
+
+      let accounts: readonly Address[] = []
+      if (isReconnecting) accounts = await this.getAccounts().catch(() => [])
 
       try {
         if (!accounts?.length) {
@@ -93,31 +74,8 @@ export function metaMask(parameters: MetaMaskParameters = {}) {
           accounts = requestedAccounts.map((x) => getAddress(x))
         }
 
-        provider.removeListener(
-          'connect',
-          this.onConnect.bind(this) as Listener,
-        )
-        provider.on(
-          'accountsChanged',
-          this.onAccountsChanged.bind(this) as Listener,
-        )
-        provider.on('chainChanged', this.onChainChanged as Listener)
-        provider.on('disconnect', this.onDisconnect.bind(this) as Listener)
-
-        // Backward compatibility with older wallet (<7.3) version that return accounts before authorization
-        if (!sdk.isExtensionActive() && !sdk._getConnection()?.isAuthorized()) {
-          function waitForAuthorized() {
-            return new Promise((resolve) => {
-              const connection = sdk._getConnection()
-              const connector = connection?.getConnector()
-              connector?.once(EventType.AUTHORIZED, () => resolve(true))
-            })
-          }
-          await waitForAuthorized()
-        }
-
         // Switch to chain if provided
-        let currentChainId = await this.getChainId()
+        let currentChainId = (await this.getChainId()) as number
         if (chainId && currentChainId !== chainId) {
           const chain = await this.switchChain!({ chainId }).catch((error) => {
             if (error.code === UserRejectedRequestError.code) throw error
@@ -126,7 +84,29 @@ export function metaMask(parameters: MetaMaskParameters = {}) {
           currentChainId = chain?.id ?? currentChainId
         }
 
-        await config.storage?.removeItem('metaMaskSDK.disconnected')
+        if (displayUri) {
+          provider.removeListener('display_uri', displayUri)
+          displayUri = undefined
+        }
+
+        // Manage EIP-1193 event listeners
+        // https://eips.ethereum.org/EIPS/eip-1193#events
+        if (connect) {
+          provider.removeListener('connect', connect)
+          connect = undefined
+        }
+        if (!accountsChanged) {
+          accountsChanged = this.onAccountsChanged.bind(this)
+          provider.on('accountsChanged', accountsChanged as Listener)
+        }
+        if (!chainChanged) {
+          chainChanged = this.onChainChanged.bind(this)
+          provider.on('chainChanged', chainChanged as Listener)
+        }
+        if (!disconnect) {
+          disconnect = this.onDisconnect.bind(this)
+          provider.on('disconnect', disconnect as Listener)
+        }
 
         return { accounts, chainId: currentChainId }
       } catch (err) {
@@ -141,18 +121,25 @@ export function metaMask(parameters: MetaMaskParameters = {}) {
     async disconnect() {
       const provider = await this.getProvider()
 
-      provider.removeListener(
-        'accountsChanged',
-        this.onAccountsChanged.bind(this),
-      )
-      provider.removeListener('chainChanged', this.onChainChanged)
-      provider.removeListener('disconnect', this.onDisconnect.bind(this))
-      provider.on('connect', this.onConnect.bind(this) as Listener)
+      // Manage EIP-1193 event listeners
+      if (accountsChanged) {
+        provider.removeListener('accountsChanged', accountsChanged)
+        accountsChanged = undefined
+      }
+      if (chainChanged) {
+        provider.removeListener('chainChanged', chainChanged)
+        chainChanged = undefined
+      }
+      if (disconnect) {
+        provider.removeListener('disconnect', disconnect)
+        disconnect = undefined
+      }
+      if (!connect) {
+        connect = this.onConnect.bind(this)
+        provider.on('connect', connect as Listener)
+      }
 
-      sdk.terminate()
-
-      // Add shim signalling connector is disconnected
-      await config.storage?.setItem('metaMaskSDK.disconnected', true)
+      await sdk.terminate()
     },
     async getAccounts() {
       const provider = await this.getProvider()
@@ -164,56 +151,61 @@ export function metaMask(parameters: MetaMaskParameters = {}) {
     async getChainId() {
       const provider = await this.getProvider()
       const chainId =
-        provider.chainId ?? (await provider?.request({ method: 'eth_chainId' }))
+        provider.getChainId() ||
+        (await provider?.request({ method: 'eth_chainId' }))
       return Number(chainId)
     },
     async getProvider() {
-      if (!walletProvider) {
-        if (!sdk || !sdk?.isInitialized()) {
-          const { MetaMaskSDK } = await import('@metamask/sdk')
-          sdk = new MetaMaskSDK({
-            dappMetadata: { name: 'wagmi' },
-            enableAnalytics: false,
-            extensionOnly: true,
-            modals: {
-              // Disable by default since it pops up when mobile tries to reconnect
-              otp() {
-                const noop = () => {}
-                return { mount: noop, unmount: noop }
-              },
-            },
-            useDeeplink: true,
-            _source: 'wagmi',
-            ...parameters,
-            checkInstallationImmediately: false,
-            checkInstallationOnAllCalls: false,
-          })
-          await sdk.init()
-        }
-        try {
-          walletProvider = sdk.getProvider()
-        } catch (error) {
-          // TODO: SDK sometimes throws errors when MM extension or mobile provider is not detected (don't throw for those errors)
-          const regex = /^SDK state invalid -- undefined( mobile)? provider$/
-          if (!regex.test((error as Error).message)) throw error
-        }
+      async function initProvider() {
+        // Unwrapping import for Vite compatibility.
+        // See: https://github.com/vitejs/vite/issues/9703
+        const MetaMaskSDK = await (async () => {
+          const { default: SDK } = await import('@metamask/sdk')
+          if (typeof SDK !== 'function' && typeof SDK.default === 'function')
+            return SDK.default
+          return SDK as unknown as typeof SDK.default
+        })()
+
+        sdk = new MetaMaskSDK({
+          dappMetadata: {},
+          ...parameters,
+          _source: 'wagmi',
+          readonlyRPCMap: Object.fromEntries(
+            config.chains.map((chain) => [
+              chain.id,
+              chain.rpcUrls.default.http[0]!,
+            ]),
+          ),
+          useDeeplink: parameters.useDeeplink ?? true,
+        })
+        await sdk.init()
+        return sdk.getProvider()!
       }
-      return walletProvider!
+
+      if (!provider) {
+        if (!providerPromise) providerPromise = initProvider()
+        provider = await providerPromise
+      }
+      return provider!
     },
     async isAuthorized() {
       try {
-        const isDisconnected =
-          // If shim exists in storage, connector is disconnected
-          await config.storage?.getItem('metaMaskSDK.disconnected')
-        if (isDisconnected) return false
-
-        const accounts = await this.getAccounts()
+        // MetaMask mobile provider sometimes fails to immediately resolve
+        // JSON-RPC requests on page load
+        const timeout = 200
+        const accounts = await withRetry(
+          () => withTimeout(() => this.getAccounts(), { timeout }),
+          {
+            delay: timeout + 1,
+            retryCount: 3,
+          },
+        )
         return !!accounts.length
       } catch {
         return false
       }
     },
-    async switchChain({ chainId }) {
+    async switchChain({ addEthereumChainParameter, chainId }) {
       const provider = await this.getProvider()
 
       const chain = config.chains.find((x) => x.id === chainId)
@@ -246,24 +238,34 @@ export function metaMask(parameters: MetaMaskParameters = {}) {
           try {
             const { default: blockExplorer, ...blockExplorers } =
               chain.blockExplorers ?? {}
-            let blockExplorerUrls
-            if (blockExplorer)
+            let blockExplorerUrls: string[] | undefined
+            if (addEthereumChainParameter?.blockExplorerUrls)
+              blockExplorerUrls = addEthereumChainParameter.blockExplorerUrls
+            else if (blockExplorer)
               blockExplorerUrls = [
                 blockExplorer.url,
                 ...Object.values(blockExplorers).map((x) => x.url),
               ]
 
+            let rpcUrls: readonly string[]
+            if (addEthereumChainParameter?.rpcUrls?.length)
+              rpcUrls = addEthereumChainParameter.rpcUrls
+            else rpcUrls = [chain.rpcUrls.default?.http[0] ?? '']
+
+            const addEthereumChain = {
+              blockExplorerUrls,
+              chainId: numberToHex(chainId),
+              chainName: addEthereumChainParameter?.chainName ?? chain.name,
+              iconUrls: addEthereumChainParameter?.iconUrls,
+              nativeCurrency:
+                addEthereumChainParameter?.nativeCurrency ??
+                chain.nativeCurrency,
+              rpcUrls,
+            } satisfies AddEthereumChainParameter
+
             await provider.request({
               method: 'wallet_addEthereumChain',
-              params: [
-                {
-                  chainId: numberToHex(chainId),
-                  chainName: chain.name,
-                  nativeCurrency: chain.nativeCurrency,
-                  rpcUrls: [chain.rpcUrls.default?.http[0] ?? ''],
-                  blockExplorerUrls,
-                },
-              ],
+              params: [addEthereumChain],
             })
 
             const currentChainId = await this.getChainId()
@@ -290,7 +292,6 @@ export function metaMask(parameters: MetaMaskParameters = {}) {
       else if (config.emitter.listenerCount('connect')) {
         const chainId = (await this.getChainId()).toString()
         this.onConnect({ chainId })
-        await config.storage?.removeItem('metaMaskSDK.disconnected')
       }
       // Regular change event
       else
@@ -310,11 +311,21 @@ export function metaMask(parameters: MetaMaskParameters = {}) {
       config.emitter.emit('connect', { accounts, chainId })
 
       const provider = await this.getProvider()
-      if (provider) {
-        provider.removeListener('connect', this.onConnect.bind(this))
-        provider.on('accountsChanged', this.onAccountsChanged.bind(this) as any)
-        provider.on('chainChanged', this.onChainChanged as any)
-        provider.on('disconnect', this.onDisconnect.bind(this) as any)
+      if (connect) {
+        provider.removeListener('connect', connect)
+        connect = undefined
+      }
+      if (!accountsChanged) {
+        accountsChanged = this.onAccountsChanged.bind(this)
+        provider.on('accountsChanged', accountsChanged as Listener)
+      }
+      if (!chainChanged) {
+        chainChanged = this.onChainChanged.bind(this)
+        provider.on('chainChanged', chainChanged as Listener)
+      }
+      if (!disconnect) {
+        disconnect = this.onDisconnect.bind(this)
+        provider.on('disconnect', disconnect as Listener)
       }
     },
     async onDisconnect(error) {
@@ -326,18 +337,34 @@ export function metaMask(parameters: MetaMaskParameters = {}) {
         if (provider && !!(await this.getAccounts()).length) return
       }
 
-      // No need to remove 'metaMaskSDK.disconnected' from storage because `onDisconnect` is typically
-      // only called when the wallet is disconnected through the wallet's interface, meaning the wallet
-      // actually disconnected and we don't need to simulate it.
+      // Remove cached SDK properties.
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('MMSDK_cached_address')
+        localStorage.removeItem('MMSDK_cached_chainId')
+      }
+
       config.emitter.emit('disconnect')
 
-      provider.removeListener(
-        'accountsChanged',
-        this.onAccountsChanged.bind(this),
-      )
-      provider.removeListener('chainChanged', this.onChainChanged)
-      provider.removeListener('disconnect', this.onDisconnect.bind(this))
-      provider.on('connect', this.onConnect.bind(this) as any)
+      // Manage EIP-1193 event listeners
+      if (!accountsChanged) {
+        accountsChanged = this.onAccountsChanged.bind(this)
+        provider.on('accountsChanged', accountsChanged as Listener)
+      }
+      if (chainChanged) {
+        provider.removeListener('chainChanged', chainChanged)
+        chainChanged = undefined
+      }
+      if (disconnect) {
+        provider.removeListener('disconnect', disconnect)
+        disconnect = undefined
+      }
+      if (!connect) {
+        connect = this.onConnect.bind(this)
+        provider.on('connect', connect as Listener)
+      }
+    },
+    onDisplayUri(uri) {
+      config.emitter.emit('message', { type: 'display_uri', data: uri })
     },
   }))
 }

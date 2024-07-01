@@ -1,6 +1,5 @@
 import { reconnect } from './actions/reconnect.js'
 import type { Config, State } from './createConfig.js'
-import { uniqueBy } from './utils/uniqueBy.js'
 
 type HydrateParameters = {
   initialState?: State | undefined
@@ -13,6 +12,9 @@ export function hydrate(config: Config, parameters: HydrateParameters) {
   if (initialState && !config._internal.store.persist.hasHydrated())
     config.setState({
       ...initialState,
+      chainId: config.chains.some((x) => x.id === initialState.chainId)
+        ? initialState.chainId
+        : config.chains[0].id,
       connections: reconnectOnMount ? initialState.connections : new Map(),
       status: reconnectOnMount ? 'reconnecting' : 'disconnected',
     })
@@ -25,9 +27,10 @@ export function hydrate(config: Config, parameters: HydrateParameters) {
           ?.getProviders()
           .map(config._internal.connectors.providerDetailToConnector)
           .map(config._internal.connectors.setup)
-        config._internal.connectors.setState((connectors) =>
-          uniqueBy([...connectors, ...(mipdConnectors ?? [])], 'id'),
-        )
+        config._internal.connectors.setState((connectors) => [
+          ...connectors,
+          ...(mipdConnectors ?? []),
+        ])
       }
 
       if (reconnectOnMount) reconnect(config)

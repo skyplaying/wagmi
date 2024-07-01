@@ -1,8 +1,12 @@
-import { type SafeAppProvider } from '@safe-global/safe-apps-provider'
-import { type Opts } from '@safe-global/safe-apps-sdk'
-import { ProviderNotFoundError, createConnector } from '@wagmi/core'
+import type { SafeAppProvider } from '@safe-global/safe-apps-provider'
+import type { Opts } from '@safe-global/safe-apps-sdk'
+import {
+  type Connector,
+  ProviderNotFoundError,
+  createConnector,
+} from '@wagmi/core'
 import type { Evaluate } from '@wagmi/core/internal'
-import { getAddress } from 'viem'
+import { getAddress, withTimeout } from 'viem'
 
 export type SafeParameters = Evaluate<
   Opts & {
@@ -15,6 +19,13 @@ export type SafeParameters = Evaluate<
      * @default false
      */
     shimDisconnect?: boolean | undefined
+    /**
+     * Timeout in milliseconds for `getInfo` (from the Safe SDK) to resolve.
+     *
+     * `getInfo` does not resolve when not used in Safe App iFrame. This allows the connector to force a timeout.
+     * @default 10
+     */
+    unstable_getInfoTimeout?: number | undefined
   }
 >
 
@@ -23,10 +34,12 @@ export function safe(parameters: SafeParameters = {}) {
   const { shimDisconnect = false } = parameters
 
   type Provider = SafeAppProvider | undefined
-  type Properties = {}
+  type Properties = Record<string, unknown>
   type StorageItem = { 'safe.disconnected': true }
 
   let provider_: Provider | undefined
+
+  let disconnect: Connector['onDisconnect'] | undefined
 
   return createConnector<Provider, Properties, StorageItem>((config) => ({
     id: 'safe',
@@ -39,7 +52,10 @@ export function safe(parameters: SafeParameters = {}) {
       const accounts = await this.getAccounts()
       const chainId = await this.getChainId()
 
-      provider.on('disconnect', this.onDisconnect.bind(this))
+      if (!disconnect) {
+        disconnect = this.onDisconnect.bind(this)
+        provider.on('disconnect', disconnect)
+      }
 
       // Remove disconnected shim if it exists
       if (shimDisconnect) await config.storage?.removeItem('safe.disconnected')
@@ -50,7 +66,10 @@ export function safe(parameters: SafeParameters = {}) {
       const provider = await this.getProvider()
       if (!provider) throw new ProviderNotFoundError()
 
-      provider.removeListener('disconnect', this.onDisconnect.bind(this))
+      if (disconnect) {
+        provider.removeListener('disconnect', disconnect)
+        disconnect = undefined
+      }
 
       // Add shim signalling connector is disconnected
       if (shimDisconnect)
@@ -82,7 +101,11 @@ export function safe(parameters: SafeParameters = {}) {
         else SDK = SafeAppsSDK as unknown as typeof SafeAppsSDK.default
         const sdk = new SDK(parameters)
 
-        const safe = await sdk.safe.getInfo()
+        // `getInfo` hangs when not used in Safe App iFrame
+        // https://github.com/safe-global/safe-apps-sdk/issues/263#issuecomment-1029835840
+        const safe = await withTimeout(() => sdk.safe.getInfo(), {
+          timeout: parameters.unstable_getInfoTimeout ?? 10,
+        })
         if (!safe) throw new Error('Could not load Safe information')
         const { SafeAppProvider } = await import(
           '@safe-global/safe-apps-provider'

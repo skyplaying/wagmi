@@ -1,9 +1,9 @@
 'use client'
 
-import {
-  type Config,
-  type ResolvedRegister,
-  type VerifyTypedDataErrorType,
+import type {
+  Config,
+  ResolvedRegister,
+  VerifyTypedDataErrorType,
 } from '@wagmi/core'
 import {
   type VerifyTypedDataData,
@@ -12,7 +12,7 @@ import {
   verifyTypedDataQueryOptions,
 } from '@wagmi/core/query'
 import type { VerifyTypedDataQueryFnData } from '@wagmi/core/query'
-import { type TypedData } from 'viem'
+import type { TypedData } from 'viem'
 import type { ConfigParameter, QueryParameter } from '../types/properties.js'
 import { type UseQueryReturnType, useQuery } from '../utils/query.js'
 import { useChainId } from './useChainId.js'
@@ -59,7 +59,7 @@ export function useVerifyTypedData<
   } = parameters
 
   const config = useConfig(parameters)
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = verifyTypedDataQueryOptions<config, typedData, primaryType>(
     config,

@@ -1,7 +1,7 @@
-import { FormEvent } from 'react'
-import { Hex, parseAbi, parseEther } from 'viem'
+import type { FormEvent } from 'react'
+import { type Hex, formatEther, parseAbi, parseEther } from 'viem'
 import {
-  BaseError,
+  type BaseError,
   useAccount,
   useAccountEffect,
   useBalance,
@@ -27,11 +27,11 @@ import { wagmiContractConfig } from './contracts'
 
 function App() {
   useAccountEffect({
-    onConnect(data) {
-      console.log('onConnect', data)
+    onConnect(_data) {
+      // console.log('onConnect', data)
     },
     onDisconnect() {
-      console.log('onDisconnect')
+      // console.log('onDisconnect')
     },
   })
 
@@ -205,9 +205,18 @@ function Balance() {
     <div>
       <h2>Balance</h2>
 
-      <div>Balance (Default Chain): {default_?.formatted}</div>
-      <div>Balance (Account Chain): {account_?.formatted}</div>
-      <div>Balance (Optimism Chain): {optimism_?.formatted}</div>
+      <div>
+        Balance (Default Chain):{' '}
+        {!!default_?.value && formatEther(default_.value)}
+      </div>
+      <div>
+        Balance (Account Chain):{' '}
+        {!!account_?.value && formatEther(account_.value)}
+      </div>
+      <div>
+        Balance (Optimism Chain):{' '}
+        {!!optimism_?.value && formatEther(optimism_.value)}
+      </div>
     </div>
   )
 }

@@ -1,9 +1,9 @@
 'use client'
 
-import {
-  type Config,
-  type GetTransactionCountErrorType,
-  type ResolvedRegister,
+import type {
+  Config,
+  GetTransactionCountErrorType,
+  ResolvedRegister,
 } from '@wagmi/core'
 import type { Evaluate } from '@wagmi/core/internal'
 import type { GetTransactionCountQueryFnData } from '@wagmi/core/query'
@@ -47,7 +47,7 @@ export function useTransactionCount<
   const { address, query = {} } = parameters
 
   const config = useConfig(parameters)
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = getTransactionCountQueryOptions(config, {
     ...parameters,

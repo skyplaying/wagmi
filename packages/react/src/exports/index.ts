@@ -2,6 +2,7 @@
 // Context
 ////////////////////////////////////////////////////////////////////////////////
 
+// biome-ignore lint/performance/noBarrelFile: entrypoint module
 export {
   type WagmiProviderProps,
   WagmiContext,
@@ -121,6 +122,12 @@ export {
   type UseConnectorClientReturnType,
   useConnectorClient,
 } from '../hooks/useConnectorClient.js'
+
+export {
+  type UseDeployContractParameters,
+  type UseDeployContractReturnType,
+  useDeployContract,
+} from '../hooks/useDeployContract.js'
 
 export {
   type UseDisconnectParameters,

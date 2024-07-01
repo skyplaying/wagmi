@@ -1,10 +1,6 @@
 'use client'
 
-import {
-  type CallErrorType,
-  type Config,
-  type ResolvedRegister,
-} from '@wagmi/core'
+import type { CallErrorType, Config, ResolvedRegister } from '@wagmi/core'
 import type { Evaluate } from '@wagmi/core/internal'
 import {
   type CallData,
@@ -48,7 +44,7 @@ export function useCall<
   const { query = {} } = parameters
 
   const config = useConfig(parameters)
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = callQueryOptions(config, {
     ...parameters,

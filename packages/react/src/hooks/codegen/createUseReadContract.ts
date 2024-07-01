@@ -1,33 +1,31 @@
-import {
-  type Config,
-  type ReadContractErrorType,
-  type ReadContractParameters,
-  type ResolvedRegister,
+import type {
+  Config,
+  ReadContractErrorType,
+  ReadContractParameters,
+  ResolvedRegister,
 } from '@wagmi/core'
-import {
-  type ScopeKeyParameter,
-  type UnionEvaluate,
-  type UnionOmit,
-  type UnionPartial,
+import type {
+  ScopeKeyParameter,
+  UnionEvaluate,
+  UnionOmit,
+  UnionPartial,
 } from '@wagmi/core/internal'
-import {
-  type ReadContractData,
-  type ReadContractQueryFnData,
-  type ReadContractQueryKey,
+import type {
+  ReadContractData,
+  ReadContractQueryFnData,
+  ReadContractQueryKey,
 } from '@wagmi/core/query'
-import {
-  type Abi,
-  type Address,
-  type ContractFunctionArgs,
-  type ContractFunctionName,
+import type {
+  Abi,
+  Address,
+  ContractFunctionArgs,
+  ContractFunctionName,
 } from 'viem'
 
-import {
-  type ConfigParameter,
-  type QueryParameter,
-} from '../../types/properties.js'
+import type { ConfigParameter, QueryParameter } from '../../types/properties.js'
 import { useAccount } from '../useAccount.js'
 import { useChainId } from '../useChainId.js'
+import { useConfig } from '../useConfig.js'
 import {
   type UseReadContractReturnType,
   useReadContract,
@@ -99,30 +97,31 @@ export function createUseReadContract<
     | ContractFunctionName<abi, stateMutability>
     | undefined = undefined,
 >(
-  config: CreateUseReadContractParameters<abi, address, functionName>,
+  props: CreateUseReadContractParameters<abi, address, functionName>,
 ): CreateUseReadContractReturnType<abi, address, functionName> {
-  if (config.address !== undefined && typeof config.address === 'object')
+  if (props.address !== undefined && typeof props.address === 'object')
     return (parameters) => {
-      const configChainId = useChainId()
-      const account = useAccount()
+      const config = useConfig(parameters)
+      const configChainId = useChainId({ config })
+      const account = useAccount({ config })
       const chainId =
         (parameters as { chainId?: number })?.chainId ??
         account.chainId ??
         configChainId
       return useReadContract({
         ...(parameters as any),
-        ...(config.functionName ? { functionName: config.functionName } : {}),
-        address: config.address?.[chainId],
-        abi: config.abi,
+        ...(props.functionName ? { functionName: props.functionName } : {}),
+        address: props.address?.[chainId],
+        abi: props.abi,
       })
     }
 
   return (parameters) => {
     return useReadContract({
       ...(parameters as any),
-      ...(config.address ? { address: config.address } : {}),
-      ...(config.functionName ? { functionName: config.functionName } : {}),
-      abi: config.abi,
+      ...(props.address ? { address: props.address } : {}),
+      ...(props.functionName ? { functionName: props.functionName } : {}),
+      abi: props.abi,
     })
   }
 }

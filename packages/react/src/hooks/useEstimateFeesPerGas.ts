@@ -1,11 +1,11 @@
 'use client'
 
-import {
-  type Config,
-  type EstimateFeesPerGasErrorType,
-  type ResolvedRegister,
+import type {
+  Config,
+  EstimateFeesPerGasErrorType,
+  ResolvedRegister,
 } from '@wagmi/core'
-import { type Evaluate } from '@wagmi/core/internal'
+import type { Evaluate } from '@wagmi/core/internal'
 import {
   type EstimateFeesPerGasData,
   type EstimateFeesPerGasOptions,
@@ -51,7 +51,7 @@ export function useEstimateFeesPerGas<
   const { query = {} } = parameters
 
   const config = useConfig(parameters)
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = estimateFeesPerGasQueryOptions(config, {
     ...parameters,

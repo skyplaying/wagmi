@@ -11,12 +11,13 @@ import {
   watchAccount,
   watchBlockNumber,
 } from '@wagmi/core'
-import * as React from 'react'
+import { useEffect, useReducer, useState } from 'react'
 
+import { formatEther } from 'viem'
 import { config } from './wagmi'
 
 function App() {
-  React.useEffect(() => {
+  useEffect(() => {
     reconnect(config)
   }, [])
 
@@ -32,15 +33,15 @@ function App() {
 }
 
 function Account() {
-  const [account, setAccount] = React.useState(getAccount(config))
+  const [account, setAccount] = useState(getAccount(config))
 
-  React.useEffect(() => {
+  useEffect(() => {
     return watchAccount(config, {
       onChange(data) {
         setAccount(data)
       },
     })
-  }, [setAccount])
+  }, [])
 
   return (
     <div>
@@ -64,11 +65,11 @@ function Account() {
 }
 
 function Connect() {
-  const [, rerender] = React.useReducer((count) => count + 1, 0)
+  const [, rerender] = useReducer((count) => count + 1, 0)
 
-  React.useEffect(() => {
+  useEffect(() => {
     return config.subscribe(({ connections }) => connections, rerender)
-  }, [rerender])
+  }, [])
 
   return (
     <div>
@@ -90,14 +91,14 @@ function Connect() {
 }
 
 function SwitchAccount() {
-  const [, rerender] = React.useReducer((count) => count + 1, 0)
+  const [, rerender] = useReducer((count) => count + 1, 0)
 
-  React.useEffect(() => {
+  useEffect(() => {
     return config.subscribe(
       ({ connections, current }) => ({ connections, current }),
       rerender,
     )
-  }, [rerender])
+  }, [])
 
   return (
     <div>
@@ -121,23 +122,21 @@ function SwitchAccount() {
 }
 
 function Balance() {
-  const [account, setAccount] = React.useState(getAccount(config))
+  const [account, setAccount] = useState(getAccount(config))
 
-  React.useEffect(() => {
+  useEffect(() => {
     return watchAccount(config, {
       onChange(data) {
         setAccount(data)
       },
     })
-  }, [setAccount])
+  }, [])
 
   /////////////////////////////////////////////////////////
 
-  const [balance, setBalance] = React.useState<
-    GetBalanceReturnType | undefined
-  >()
+  const [balance, setBalance] = useState<GetBalanceReturnType | undefined>()
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!account.address) return
     return watchBlockNumber(config, {
       async onBlockNumber() {
@@ -151,29 +150,29 @@ function Balance() {
         }
       },
     })
-  }, [account.address, setBalance])
+  }, [account.address])
 
   return (
     <div>
       <h2>Balance</h2>
 
-      <div>Balance: {balance?.formatted}</div>
+      <div>Balance: {!!balance?.value && formatEther(balance.value)}</div>
     </div>
   )
 }
 
 function BlockNumber() {
-  const [blockNumber, setBlockNumber] = React.useState<
+  const [blockNumber, setBlockNumber] = useState<
     GetBlockNumberReturnType | undefined
   >()
 
-  React.useEffect(() => {
+  useEffect(() => {
     ;(async () => {
       setBlockNumber(await getBlockNumber(config))
 
       watchBlockNumber(config, { onBlockNumber: setBlockNumber })
     })()
-  }, [setBlockNumber])
+  }, [])
 
   return (
     <div>

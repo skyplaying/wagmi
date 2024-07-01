@@ -1,30 +1,32 @@
-import { type Chain } from 'viem'
+import type { Chain } from 'viem'
 import { hexToString } from 'viem'
 import {
+  call,
+  getTransaction,
   type WaitForTransactionReceiptErrorType as viem_WaitForTransactionReceiptErrorType,
   type WaitForTransactionReceiptParameters as viem_WaitForTransactionReceiptParameters,
   type WaitForTransactionReceiptReturnType as viem_WaitForTransactionReceiptReturnType,
-  call,
-  getTransaction,
   waitForTransactionReceipt as viem_waitForTransactionReceipt,
 } from 'viem/actions'
 
-import { type Config } from '../createConfig.js'
-import { type SelectChains } from '../types/chain.js'
-import { type ChainIdParameter } from '../types/properties.js'
-import { type Evaluate, type IsNarrowable } from '../types/utils.js'
+import type { Config } from '../createConfig.js'
+import type { SelectChains } from '../types/chain.js'
+import type { ChainIdParameter } from '../types/properties.js'
+import type { Evaluate, IsNarrowable } from '../types/utils.js'
 import { getAction } from '../utils/getAction.js'
 
 export type WaitForTransactionReceiptParameters<
   config extends Config = Config,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
 > = Evaluate<
   viem_WaitForTransactionReceiptParameters & ChainIdParameter<config, chainId>
 >
 
 export type WaitForTransactionReceiptReturnType<
   config extends Config = Config,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   ///
   chains extends readonly Chain[] = SelectChains<config, chainId>,
 > = Evaluate<
@@ -63,14 +65,16 @@ export async function waitForTransactionReceipt<
     )
     const txn = await action_getTransaction({ hash: receipt.transactionHash })
     const action_call = getAction(client, call, 'call')
-    const code = (await action_call({
+    const code = await action_call({
       ...(txn as any),
       gasPrice: txn.type !== 'eip1559' ? txn.gasPrice : undefined,
       maxFeePerGas: txn.type === 'eip1559' ? txn.maxFeePerGas : undefined,
       maxPriorityFeePerGas:
         txn.type === 'eip1559' ? txn.maxPriorityFeePerGas : undefined,
-    })) as unknown as string
-    const reason = hexToString(`0x${code.substring(138)}`)
+    })
+    const reason = code?.data
+      ? hexToString(`0x${code.data.substring(138)}`)
+      : 'unknown reason'
     throw new Error(reason)
   }
 

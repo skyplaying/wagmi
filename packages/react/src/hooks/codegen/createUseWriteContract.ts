@@ -1,8 +1,8 @@
-import { type MutateOptions } from '@tanstack/react-query'
-import {
-  type Config,
-  type ResolvedRegister,
-  type WriteContractErrorType,
+import type { MutateOptions } from '@tanstack/react-query'
+import type {
+  Config,
+  ResolvedRegister,
+  WriteContractErrorType,
 } from '@wagmi/core'
 import type {
   ChainIdParameter,
@@ -12,27 +12,28 @@ import type {
   UnionEvaluate,
   UnionOmit,
 } from '@wagmi/core/internal'
-import {
-  type WriteContractData,
-  type WriteContractVariables,
+import type {
+  WriteContractData,
+  WriteContractVariables,
 } from '@wagmi/core/query'
 import { useCallback } from 'react'
-import {
-  type Abi,
-  type Account,
-  type Address,
-  type Chain,
-  type ContractFunctionArgs,
-  type ContractFunctionName,
+import type {
+  Abi,
+  Account,
+  Address,
+  Chain,
+  ContractFunctionArgs,
+  ContractFunctionName,
 } from 'viem'
-import { type WriteContractParameters as viem_WriteContractParameters } from 'viem/actions'
+import type { WriteContractParameters as viem_WriteContractParameters } from 'viem/actions'
 
 import { useAccount } from '../useAccount.js'
 import { useChainId } from '../useChainId.js'
+import { useConfig } from '../useConfig.js'
 import {
   type UseWriteContractParameters,
-  type UseWriteContractReturnType as wagmi_UseWriteContractReturnType,
   useWriteContract,
+  type UseWriteContractReturnType as wagmi_UseWriteContractReturnType,
 } from '../useWriteContract.js'
 
 type stateMutability = 'nonpayable' | 'payable'
@@ -150,19 +151,20 @@ export function createUseWriteContract<
     | ContractFunctionName<abi, stateMutability>
     | undefined = undefined,
 >(
-  config: CreateUseWriteContractParameters<abi, address, functionName>,
+  props: CreateUseWriteContractParameters<abi, address, functionName>,
 ): CreateUseWriteContractReturnType<abi, address, functionName> {
-  if (config.address !== undefined && typeof config.address === 'object')
+  if (props.address !== undefined && typeof props.address === 'object')
     return (parameters) => {
+      const config = useConfig(parameters)
       const result = useWriteContract(parameters)
-      const configChainId = useChainId()
-      const account = useAccount()
+      const configChainId = useChainId({ config })
+      const account = useAccount({ config })
       type Args = Parameters<wagmi_UseWriteContractReturnType['writeContract']>
       return {
         ...(result as any),
         writeContract: useCallback(
           (...args: Args) => {
-            let chainId
+            let chainId: number | undefined
             if (args[0].chainId) chainId = args[0].chainId
             else if (args[0].account && args[0].account === account.address)
               chainId = account.chainId
@@ -171,25 +173,25 @@ export function createUseWriteContract<
 
             const variables = {
               ...(args[0] as any),
-              address: chainId ? config.address?.[chainId] : undefined,
-              ...(config.functionName
-                ? { functionName: config.functionName }
+              address: chainId ? props.address?.[chainId] : undefined,
+              ...(props.functionName
+                ? { functionName: props.functionName }
                 : {}),
-              abi: config.abi,
+              abi: props.abi,
             }
             result.writeContract(variables, args[1] as any)
           },
           [
             account.address,
             account.chainId,
-            config,
+            props,
             configChainId,
             result.writeContract,
           ],
         ),
         writeContractAsync: useCallback(
           (...args: Args) => {
-            let chainId
+            let chainId: number | undefined
             if (args[0].chainId) chainId = args[0].chainId
             else if (args[0].account && args[0].account === account.address)
               chainId = account.chainId
@@ -198,18 +200,18 @@ export function createUseWriteContract<
 
             const variables = {
               ...(args[0] as any),
-              address: chainId ? config.address?.[chainId] : undefined,
-              ...(config.functionName
-                ? { functionName: config.functionName }
+              address: chainId ? props.address?.[chainId] : undefined,
+              ...(props.functionName
+                ? { functionName: props.functionName }
                 : {}),
-              abi: config.abi,
+              abi: props.abi,
             }
             return result.writeContractAsync(variables, args[1] as any)
           },
           [
             account.address,
             account.chainId,
-            config,
+            props,
             configChainId,
             result.writeContractAsync,
           ],
@@ -226,29 +228,25 @@ export function createUseWriteContract<
         (...args: Args) => {
           const variables = {
             ...(args[0] as any),
-            ...(config.address ? { address: config.address } : {}),
-            ...(config.functionName
-              ? { functionName: config.functionName }
-              : {}),
-            abi: config.abi,
+            ...(props.address ? { address: props.address } : {}),
+            ...(props.functionName ? { functionName: props.functionName } : {}),
+            abi: props.abi,
           }
           result.writeContract(variables, args[1] as any)
         },
-        [config, result.writeContract],
+        [props, result.writeContract],
       ),
       writeContractAsync: useCallback(
         (...args: Args) => {
           const variables = {
             ...(args[0] as any),
-            ...(config.address ? { address: config.address } : {}),
-            ...(config.functionName
-              ? { functionName: config.functionName }
-              : {}),
-            abi: config.abi,
+            ...(props.address ? { address: props.address } : {}),
+            ...(props.functionName ? { functionName: props.functionName } : {}),
+            abi: props.abi,
           }
           return result.writeContractAsync(variables, args[1] as any)
         },
-        [config, result.writeContractAsync],
+        [props, result.writeContractAsync],
       ),
     }
   }

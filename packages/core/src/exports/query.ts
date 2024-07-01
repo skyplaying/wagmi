@@ -2,6 +2,7 @@
 // Tanstack Query
 ////////////////////////////////////////////////////////////////////////////////
 
+// biome-ignore lint/performance/noBarrelFile: entrypoint module
 export {
   type CallData,
   type CallOptions,
@@ -18,6 +19,14 @@ export {
   type ConnectMutateAsync,
   connectMutationOptions,
 } from '../query/connect.js'
+
+export {
+  type DeployContractData,
+  type DeployContractVariables,
+  type DeployContractMutate,
+  type DeployContractMutateAsync,
+  deployContractMutationOptions,
+} from '../query/deployContract.js'
 
 export {
   type DisconnectData,
@@ -371,4 +380,4 @@ export {
   writeContractMutationOptions,
 } from '../query/writeContract.js'
 
-export { hashFn } from '../query/utils.js'
+export { hashFn, structuralSharing } from '../query/utils.js'

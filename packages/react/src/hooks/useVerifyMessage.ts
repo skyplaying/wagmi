@@ -1,9 +1,9 @@
 'use client'
 
-import {
-  type Config,
-  type ResolvedRegister,
-  type VerifyMessageErrorType,
+import type {
+  Config,
+  ResolvedRegister,
+  VerifyMessageErrorType,
 } from '@wagmi/core'
 import type { Evaluate } from '@wagmi/core/internal'
 import {
@@ -45,7 +45,7 @@ export function useVerifyMessage<
   const { address, message, signature, query = {} } = parameters
 
   const config = useConfig(parameters)
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = verifyMessageQueryOptions(config, {
     ...parameters,

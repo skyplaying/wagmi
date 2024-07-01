@@ -1,9 +1,9 @@
 'use client'
 
-import {
-  type Config,
-  type GetStorageAtErrorType,
-  type ResolvedRegister,
+import type {
+  Config,
+  GetStorageAtErrorType,
+  ResolvedRegister,
 } from '@wagmi/core'
 import type { Evaluate } from '@wagmi/core/internal'
 import {
@@ -12,11 +12,8 @@ import {
   type GetStorageAtQueryKey,
   getStorageAtQueryOptions,
 } from '@wagmi/core/query'
-import { type GetStorageAtQueryFnData } from '@wagmi/core/query'
-import {
-  type ConfigParameter,
-  type QueryParameter,
-} from '../types/properties.js'
+import type { GetStorageAtQueryFnData } from '@wagmi/core/query'
+import type { ConfigParameter, QueryParameter } from '../types/properties.js'
 import { type UseQueryReturnType, useQuery } from '../utils/query.js'
 import { useChainId } from './useChainId.js'
 import { useConfig } from './useConfig.js'
@@ -48,7 +45,7 @@ export function useStorageAt<
   const { address, slot, query = {} } = parameters
 
   const config = useConfig(parameters)
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = getStorageAtQueryOptions(config, {
     ...parameters,

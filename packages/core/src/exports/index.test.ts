@@ -7,6 +7,7 @@ test('exports', () => {
     [
       "call",
       "connect",
+      "deployContract",
       "disconnect",
       "estimateGas",
       "estimateFeesPerGas",
@@ -87,6 +88,7 @@ test('exports', () => {
       "ConnectorAlreadyConnectedError",
       "ConnectorNotFoundError",
       "ConnectorAccountNotFoundError",
+      "ConnectorChainMismatchError",
       "ProviderNotFoundError",
       "SwitchChainNotSupportedError",
       "custom",

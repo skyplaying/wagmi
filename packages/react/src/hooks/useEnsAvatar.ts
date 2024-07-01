@@ -5,7 +5,7 @@ import type {
   GetEnsAvatarErrorType,
   ResolvedRegister,
 } from '@wagmi/core'
-import { type Evaluate } from '@wagmi/core/internal'
+import type { Evaluate } from '@wagmi/core/internal'
 import {
   type GetEnsAvatarData,
   type GetEnsAvatarOptions,
@@ -46,7 +46,7 @@ export function useEnsAvatar<
   const { name, query = {} } = parameters
 
   const config = useConfig(parameters)
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = getEnsAvatarQueryOptions(config, {
     ...parameters,

@@ -1,15 +1,15 @@
 import { expectTypeOf, test } from 'vitest'
 import { useSwitchChain } from 'wagmi'
-import { type Chain, celo, mainnet, optimism } from 'wagmi/chains'
+import { type celo, mainnet, type optimism } from 'wagmi/chains'
 
-import { type ChainId } from './config.js'
+import type { ChainId, config } from './config.js'
 
 test('default', () => {
   const { chains, switchChain } = useSwitchChain()
 
-  expectTypeOf(chains[0]).toEqualTypeOf<Chain | typeof celo>()
-  expectTypeOf(chains[2]).toEqualTypeOf<Chain | typeof optimism>()
-  expectTypeOf(chains[5]).toEqualTypeOf<Chain | undefined>()
+  expectTypeOf(chains).toEqualTypeOf<(typeof config)['chains']>()
+  expectTypeOf(chains[0]).toEqualTypeOf<typeof celo>()
+  expectTypeOf(chains[2]).toEqualTypeOf<typeof optimism>()
 
   switchChain(
     { chainId: 1 },

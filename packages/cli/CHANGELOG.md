@@ -1,5 +1,61 @@
 # @wagmi/cli
 
+## 2.1.13
+
+### Patch Changes
+
+- [`7264d1f450727f6ba0cbea8aa1c7a83e22a5bf20`](https://github.com/wevm/wagmi/commit/7264d1f450727f6ba0cbea8aa1c7a83e22a5bf20) Thanks [@tmm](https://github.com/tmm)! - Fixed generate not exiting for long-running processes.
+
+## 2.1.12
+
+### Patch Changes
+
+- [`ac038b29623ccb0d2fee40d9f943c8df28138dac`](https://github.com/wevm/wagmi/commit/ac038b29623ccb0d2fee40d9f943c8df28138dac) Thanks [@tmm](https://github.com/tmm)! - Updated Foundry default excludes.
+
+## 2.1.11
+
+### Patch Changes
+
+- [#4084](https://github.com/wevm/wagmi/pull/4084) [`b54203bf8fa911e6f14b9675980cf38fb95d7d3e`](https://github.com/wevm/wagmi/commit/b54203bf8fa911e6f14b9675980cf38fb95d7d3e) Thanks [@tmm](https://github.com/tmm)! - Reduced internal dependencies.
+
+## 2.1.10
+
+### Patch Changes
+
+- [#4051](https://github.com/wevm/wagmi/pull/4051) [`275e78b0e585f0ec9da2f9661ce9990aed18e9f4`](https://github.com/wevm/wagmi/commit/275e78b0e585f0ec9da2f9661ce9990aed18e9f4) Thanks [@tmm](https://github.com/tmm)! - Updated Sourcify plugin internals.
+
+## 2.1.9
+
+### Patch Changes
+
+- [`f9346dbcffaf57a8949cb96e43df111a89d733b1`](https://github.com/wevm/wagmi/commit/f9346dbcffaf57a8949cb96e43df111a89d733b1) Thanks [@tmm](https://github.com/tmm)! - Updated Foundry plugin default excludes.
+
+## 2.1.8
+
+### Patch Changes
+
+- [#3957](https://github.com/wevm/wagmi/pull/3957) [`7d00680f73b090eb34af928ae74277bec1973953`](https://github.com/wevm/wagmi/commit/7d00680f73b090eb34af928ae74277bec1973953) Thanks [@cstoneham](https://github.com/cstoneham)! - Added Blast to Etherscan plugin
+
+## 2.1.7
+
+### Patch Changes
+
+- [`1122678bbad0232590bd4060a73752de2c84982d`](https://github.com/wevm/wagmi/commit/1122678bbad0232590bd4060a73752de2c84982d) Thanks [@tmm](https://github.com/tmm)! - Published unpublished changes in [#3756](https://github.com/wevm/wagmi/pull/3756).
+
+## 2.1.6
+
+### Patch Changes
+
+- [#3756](https://github.com/wevm/wagmi/pull/3756) [`c7d6f467`](https://github.com/wevm/wagmi/commit/c7d6f4679125fd2f6cca5b5ef362abf47e37f934) Thanks [@jrfrantz](https://github.com/jrfrantz)! - Added basescan to etherscan cli plugin
+
+## 2.1.5
+
+### Patch Changes
+
+- [`e1ca4e63`](https://github.com/wevm/wagmi/commit/e1ca4e637ae6cec7f5902b0a2c0e0efc3b751a1d) Thanks [@tmm](https://github.com/tmm)! - Added title to CLI process.
+
+- [#3723](https://github.com/wevm/wagmi/pull/3723) [`d6bc98ca`](https://github.com/wevm/wagmi/commit/d6bc98ca0ce9081f192f62e0b0fcfea3cb07a2bb) Thanks [@leecobaby](https://github.com/leecobaby)! - Broadened TypeScript detection.
+
 ## 2.1.4
 
 ### Patch Changes

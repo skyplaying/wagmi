@@ -1,7 +1,7 @@
 'use client'
 
 import type { Config, GetTokenErrorType, ResolvedRegister } from '@wagmi/core'
-import { type Evaluate } from '@wagmi/core/internal'
+import type { Evaluate } from '@wagmi/core/internal'
 import {
   type GetTokenData,
   type GetTokenOptions,
@@ -48,7 +48,7 @@ export function useToken<
   const { address, query = {} } = parameters
 
   const config = useConfig(parameters)
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = getTokenQueryOptions(config, {
     ...parameters,

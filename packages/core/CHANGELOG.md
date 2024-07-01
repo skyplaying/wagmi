@@ -1,5 +1,237 @@
 # @wagmi/core
 
+## 2.11.6
+
+### Patch Changes
+
+- [#4060](https://github.com/wevm/wagmi/pull/4060) [`95965c1f19d480b97f2b297a077a9e607dee32ad`](https://github.com/wevm/wagmi/commit/95965c1f19d480b97f2b297a077a9e607dee32ad) Thanks [@dalechyn](https://github.com/dalechyn)! - Bumped Tanstack Query dependencies to fix typing issues between exported Wagmi query options and TanStack Query suspense query methods (due to [`direction` property in `QueryFunctionContext` being deprecated](https://github.com/TanStack/query/pull/7410)).
+
+## 2.11.5
+
+### Patch Changes
+
+- [#4079](https://github.com/wevm/wagmi/pull/4079) [`04f2b846b113f3d300d82c9fa75212f1805817c5`](https://github.com/wevm/wagmi/commit/04f2b846b113f3d300d82c9fa75212f1805817c5) Thanks [@tmm](https://github.com/tmm)! - Added revalidation for config chain ID in SSR and migration.
+
+## 2.11.4
+
+### Patch Changes
+
+- [`9e8345cd56186b997b5e56deaa2cfc69b30d15f6`](https://github.com/wevm/wagmi/commit/9e8345cd56186b997b5e56deaa2cfc69b30d15f6) Thanks [@tmm](https://github.com/tmm)! - Switched `Register` to `interface` to fix declaration merging.
+
+## 2.11.3
+
+### Patch Changes
+
+- [#4065](https://github.com/wevm/wagmi/pull/4065) [`8974e6269bb5d7bfaa90db0246bc7d13e8bff798`](https://github.com/wevm/wagmi/commit/8974e6269bb5d7bfaa90db0246bc7d13e8bff798) Thanks [@alx-khramov](https://github.com/alx-khramov)! - Added timeout to internal call of `'wallet_revokePermissions'` request during `injected#disconnect` as some wallets that do not support this method hang.
+
+## 2.11.2
+
+### Patch Changes
+
+- [#4042](https://github.com/wevm/wagmi/pull/4042) [`b4d9ef79deb554ee20fed6666a474be5e7cdd522`](https://github.com/wevm/wagmi/commit/b4d9ef79deb554ee20fed6666a474be5e7cdd522) Thanks [@tmm](https://github.com/tmm)! - Removed `injected` connector `isAuthorized` timeout.
+
+## 2.11.1
+
+### Patch Changes
+
+- [`9c862d8d63e3d692a22cef2a90782b74a9103f17`](https://github.com/wevm/wagmi/commit/9c862d8d63e3d692a22cef2a90782b74a9103f17) Thanks [@tmm](https://github.com/tmm)! - Reverted internal module loading utility.
+
+## 2.11.0
+
+### Minor Changes
+
+- [#3816](https://github.com/wevm/wagmi/pull/3816) [`06bb598a7f04c7b167f5b7ff6d46bd15886a6a14`](https://github.com/wevm/wagmi/commit/06bb598a7f04c7b167f5b7ff6d46bd15886a6a14) Thanks [@marthendalnunes](https://github.com/marthendalnunes)! - Added `deployContract` action.
+
+### Patch Changes
+
+- [`24a45b269bd0214a29d6f82a84ac66ef8c3f3822`](https://github.com/wevm/wagmi/commit/24a45b269bd0214a29d6f82a84ac66ef8c3f3822) Thanks [@tmm](https://github.com/tmm)! - Added `SameSite` default to `cookieStorage`
+
+## 2.10.6
+
+### Patch Changes
+
+- [#4009](https://github.com/wevm/wagmi/pull/4009) [`f2a7cefab96691ebed8b8e45ffde071c47b58dbe`](https://github.com/wevm/wagmi/commit/f2a7cefab96691ebed8b8e45ffde071c47b58dbe) Thanks [@roninjin10](https://github.com/roninjin10)! - Marked `to` as optional for `sendTransaction`.
+
+- [#4023](https://github.com/wevm/wagmi/pull/4023) [`f0ea0b2a7fe193dadfeb49a4c8031ee451c638b5`](https://github.com/wevm/wagmi/commit/f0ea0b2a7fe193dadfeb49a4c8031ee451c638b5) Thanks [@jxom](https://github.com/jxom)! - Added chain check to `getConnectorClient` since it's possible for connection state chain ID to get out of sync with the connector (e.g. [wallet bug](https://github.com/MetaMask/metamask-extension/issues/25097)).
+
+## 2.10.5
+
+### Patch Changes
+
+- [#3970](https://github.com/wevm/wagmi/pull/3970) [`030c7c2cb380dfd67a2182f62e2aa7a6e1601898`](https://github.com/wevm/wagmi/commit/030c7c2cb380dfd67a2182f62e2aa7a6e1601898) Thanks [@nanxiaobei](https://github.com/nanxiaobei)! - Fixed `cookieStorage` not working across paths.
+
+## 2.10.4
+
+### Patch Changes
+
+- [#3984](https://github.com/wevm/wagmi/pull/3984) [`51fde8a0433b4fff357c1a8d7e08b41b4c86c968`](https://github.com/wevm/wagmi/commit/51fde8a0433b4fff357c1a8d7e08b41b4c86c968) Thanks [@tmm](https://github.com/tmm)! - Fixed `writeContract` query types for `value` property.
+
+## 2.10.3
+
+### Patch Changes
+
+- [#3962](https://github.com/wevm/wagmi/pull/3962) [`2804a8a583b1874271154898b4bae38756ef581c`](https://github.com/wevm/wagmi/commit/2804a8a583b1874271154898b4bae38756ef581c) Thanks [@tmm](https://github.com/tmm)! - Added catch to `reconnect`.
+
+## 2.10.2
+
+### Patch Changes
+
+- [#3940](https://github.com/wevm/wagmi/pull/3940) [`a5071f581dfdfb961718873643a2fc629101c72a`](https://github.com/wevm/wagmi/commit/a5071f581dfdfb961718873643a2fc629101c72a) Thanks [@jxom](https://github.com/jxom)! - Fixed usage of `metaMask` connector in Vite environments.
+
+## 2.10.1
+
+### Patch Changes
+
+- Bumped versions.
+
+## 2.10.0
+
+### Minor Changes
+
+- [#3928](https://github.com/wevm/wagmi/pull/3928) [`3117e71825f9c58a0d718f3d1686f1a191fa9cb1`](https://github.com/wevm/wagmi/commit/3117e71825f9c58a0d718f3d1686f1a191fa9cb1) Thanks [@tmm](https://github.com/tmm)! - Updated the default Coinbase SDK in `coinbaseWallet` Connector to v4.x.
+
+## 2.9.8
+
+### Patch Changes
+
+- [#3906](https://github.com/wevm/wagmi/pull/3906) [`32fcb4a31dde6b0206961d8ffe9c651f8a459c67`](https://github.com/wevm/wagmi/commit/32fcb4a31dde6b0206961d8ffe9c651f8a459c67) Thanks [@tmm](https://github.com/tmm)! - Added support for Vue.
+
+## 2.9.7
+
+### Patch Changes
+
+- [#3924](https://github.com/wevm/wagmi/pull/3924) [`1f58734f88458e0f6adb05c99f0c90f36ab286b8`](https://github.com/wevm/wagmi/commit/1f58734f88458e0f6adb05c99f0c90f36ab286b8) Thanks [@jxom](https://github.com/jxom)! - Refactored `isChainsStale` logic in `walletConnect` connector.
+
+## 2.9.6
+
+### Patch Changes
+
+- [#3917](https://github.com/wevm/wagmi/pull/3917) [`05948fdad5bb4a56b08916d45b3dec2cb1e5f55b`](https://github.com/wevm/wagmi/commit/05948fdad5bb4a56b08916d45b3dec2cb1e5f55b) Thanks [@jxom](https://github.com/jxom)! - Updated `@metamask/sdk`.
+
+## 2.9.5
+
+### Patch Changes
+
+- [`4fecbbb66d0aacd03b8c62a6455d11a33cde8f85`](https://github.com/wevm/wagmi/commit/4fecbbb66d0aacd03b8c62a6455d11a33cde8f85) Thanks [@jxom](https://github.com/jxom)! - Fixed address comparison in `getConnectorClient`.
+
+## 2.9.4
+
+### Patch Changes
+
+- [#3910](https://github.com/wevm/wagmi/pull/3910) [`e6139a97c4b8804d734b1547b5e3921ce01fbe24`](https://github.com/wevm/wagmi/commit/e6139a97c4b8804d734b1547b5e3921ce01fbe24) Thanks [@tmm](https://github.com/tmm)! - Added experimental `wallet_revokePermissions` support to `injected`.
+
+## 2.9.3
+
+### Patch Changes
+
+- [#3904](https://github.com/wevm/wagmi/pull/3904) [`addca28ebc20f1a4367c35fe9ef786decff9c87e`](https://github.com/wevm/wagmi/commit/addca28ebc20f1a4367c35fe9ef786decff9c87e) Thanks [@jxom](https://github.com/jxom)! - Updated `@walletconnect/ethereum-provider`.
+
+## 2.9.2
+
+### Patch Changes
+
+- [#3902](https://github.com/wevm/wagmi/pull/3902) [`204b7b624612405500ec098fb9e35facd3f74ca4`](https://github.com/wevm/wagmi/commit/204b7b624612405500ec098fb9e35facd3f74ca4) Thanks [@jxom](https://github.com/jxom)! - Made third-party SDK imports type-only.
+
+## 2.9.1
+
+### Patch Changes
+
+- [`cda6a5d5`](https://github.com/wevm/wagmi/commit/cda6a5d56328330fbde050b4ef40b01c58d2519a) Thanks [@jxom](https://github.com/jxom)! - Updated packages.
+
+## 2.9.0
+
+### Minor Changes
+
+- [#3878](https://github.com/wevm/wagmi/pull/3878) [`017828fc`](https://github.com/wevm/wagmi/commit/017828fc027c7a84b54ea9d627e9389f4d60d6c2) Thanks [@jxom](https://github.com/jxom)! - Added experimental EIP-5792 Actions & Hooks.
+
+## 2.8.1
+
+### Patch Changes
+
+- [#3869](https://github.com/wevm/wagmi/pull/3869) [`d4a78eb0`](https://github.com/wevm/wagmi/commit/d4a78eb07119d2e5617e52481ac7d6c6d1583ddc) Thanks [@jxom](https://github.com/jxom)! - Fixed issue where `prepareTransactionRequest` would internally call unsupported wallet RPC methods.
+
+## 2.8.0
+
+### Minor Changes
+
+- [#3868](https://github.com/wevm/wagmi/pull/3868) [`c2af20b8`](https://github.com/wevm/wagmi/commit/c2af20b88cf16970d087faaec10b463357a5836e) Thanks [@jxom](https://github.com/jxom)! - Added `supportsSimulation` property to connectors that indicates if the connector's wallet supports contract simulation.
+
+### Patch Changes
+
+- [#3858](https://github.com/wevm/wagmi/pull/3858) [`0d141f17`](https://github.com/wevm/wagmi/commit/0d141f171d6ec44bcbfc9c876565b5e2fb8af6de) Thanks [@yulafezmesi](https://github.com/yulafezmesi)! - Fixed accessing reverted reason property inside `waitForTransactionReceipt`.
+
+## 2.7.0
+
+### Minor Changes
+
+- [#3857](https://github.com/wevm/wagmi/pull/3857) [`d4274c03`](https://github.com/wevm/wagmi/commit/d4274c03a6af5f2d26d31432016ebc14950a330e) Thanks [@tmm](https://github.com/tmm)! - Added `addEthereumChainParameter` to `switchChain`-related methods.
+
+### Patch Changes
+
+- [#3849](https://github.com/wevm/wagmi/pull/3849) [`4781a405`](https://github.com/wevm/wagmi/commit/4781a4056d4ffc2c74f96a75429e9b2cd2417ad8) Thanks [@tmm](https://github.com/tmm)! - Fixed `shimDisconnect: false` behavior.
+
+- [#3859](https://github.com/wevm/wagmi/pull/3859) [`400c960b`](https://github.com/wevm/wagmi/commit/400c960b30d701c134850c695ae903a382c29b5b) Thanks [@holic](https://github.com/holic)! - Added workaround to injected connector for MetaMask bug, where chain switching does not work if target chain RPC `'net_version'` request fails.
+
+## 2.6.19
+
+### Patch Changes
+
+- [`e3c832a1`](https://github.com/wevm/wagmi/commit/e3c832a12c301f9b0ee129d877b3101d220ba8b2) Thanks [@jxom](https://github.com/jxom)! - Fixed undefined `navigator` issue in MetaMask connector.
+
+## 2.6.18
+
+### Patch Changes
+
+- [#3848](https://github.com/wevm/wagmi/pull/3848) [`dd40a41c`](https://github.com/wevm/wagmi/commit/dd40a41c526ab60a288aff2250ed8dba92a27b16) Thanks [@jxom](https://github.com/jxom)! - Updated MetaMask SDK.
+
+## 2.6.17
+
+### Patch Changes
+
+- [#3822](https://github.com/wevm/wagmi/pull/3822) [`a97bfbae`](https://github.com/wevm/wagmi/commit/a97bfbaeb615cfef04665e5e7348d85d17f960f0) Thanks [@jxom](https://github.com/jxom)! - Fixed an issue where Wagmi would not correctly rehydrate the active chain when a persisted store was being used.
+
+## 2.6.16
+
+### Patch Changes
+
+- [#3788](https://github.com/wevm/wagmi/pull/3788) [`42ad380d`](https://github.com/wevm/wagmi/commit/42ad380d9a5d8bc0f61d73612142dea9d098de5e) Thanks [@tmm](https://github.com/tmm)! - Refactored connectors to remove unnecessarily event listeners.
+
+## 2.6.15
+
+### Patch Changes
+
+- [#3782](https://github.com/wevm/wagmi/pull/3782) [`b907d5ac`](https://github.com/wevm/wagmi/commit/b907d5ac3a746bcbccc06d1fe78c5bd8f9a7d685) Thanks [@jxom](https://github.com/jxom)! - Refactored injected connector connection logic.
+
+## 2.6.14
+
+### Patch Changes
+
+- [#3777](https://github.com/wevm/wagmi/pull/3777) [`b3b54ef1`](https://github.com/wevm/wagmi/commit/b3b54ef179c5fa0d1694d38d4b808549a0550409) Thanks [@desfero](https://github.com/desfero)! - Fixed `writeContract` to forward `chainIn` when simulating contract call
+
+- [#3779](https://github.com/wevm/wagmi/pull/3779) [`3da20bb8`](https://github.com/wevm/wagmi/commit/3da20bb80e7c3efeef8227ced66ad615370fc242) Thanks [@jxom](https://github.com/jxom)! - Fixed an issue where `eth_requestAccounts` would be called upon reconnect instead of `eth_accounts`.
+
+- [`a3d1858f`](https://github.com/wevm/wagmi/commit/a3d1858fce448d2b70e36ee692ef1589b74e9d3f) Thanks [@jxom](https://github.com/jxom)! - Fixed hydration conditional in `createConfig`.
+
+## 2.6.13
+
+### Patch Changes
+
+- [`b80236dc`](https://github.com/wevm/wagmi/commit/b80236dc623095fe8f1e1d10957d7776fb6ab48b) Thanks [@jxom](https://github.com/jxom)! - Removed unneeded `uniqueBy` check on connectors state.
+
+## 2.6.12
+
+### Patch Changes
+
+- [#3763](https://github.com/wevm/wagmi/pull/3763) [`a59069e9`](https://github.com/wevm/wagmi/commit/a59069e9fab45dd606bb89a7f829fe94c51a5494) Thanks [@tmm](https://github.com/tmm)! - Fixed `getConnectorClient` internal address comparison.
+
+- [#3608](https://github.com/wevm/wagmi/pull/3608) [`0acd3132`](https://github.com/wevm/wagmi/commit/0acd31320f534993af566be5490c2978b6184f66) Thanks [@mqklin](https://github.com/mqklin)! - Disabled `wallet_requestPermissions` prompt when `shimDisconnect` is `false`.
+
+## 2.6.11
+
+### Patch Changes
+
+- [`e1ca4e63`](https://github.com/wevm/wagmi/commit/e1ca4e637ae6cec7f5902b0a2c0e0efc3b751a1d) Thanks [@tmm](https://github.com/tmm)! - Deprecated `normalizeChainId`. Use `Number` instead.
+
 ## 2.6.10
 
 ### Patch Changes

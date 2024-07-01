@@ -2,6 +2,7 @@
 // Actions
 ////////////////////////////////////////////////////////////////////////////////
 
+// biome-ignore lint/performance/noBarrelFile: entrypoint module
 export {
   type CallErrorType,
   type CallParameters,
@@ -15,6 +16,13 @@ export {
   type ConnectReturnType,
   connect,
 } from '../actions/connect.js'
+
+export {
+  type DeployContractErrorType,
+  type DeployContractParameters,
+  type DeployContractReturnType,
+  deployContract,
+} from '../actions/deployContract.js'
 
 export {
   type DisconnectErrorType,

@@ -1,10 +1,6 @@
 'use client'
 
-import {
-  type Config,
-  type GetBalanceErrorType,
-  type ResolvedRegister,
-} from '@wagmi/core'
+import type { Config, GetBalanceErrorType, ResolvedRegister } from '@wagmi/core'
 import type { Evaluate } from '@wagmi/core/internal'
 import {
   type GetBalanceData,
@@ -46,7 +42,7 @@ export function useBalance<
   const { address, query = {} } = parameters
 
   const config = useConfig(parameters)
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = getBalanceQueryOptions(config, {
     ...parameters,

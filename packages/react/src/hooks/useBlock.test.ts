@@ -1,15 +1,14 @@
-import { testClient } from '@wagmi/test'
-import { renderHook, waitFor } from '@wagmi/test/react'
-import { expect, test } from 'vitest'
+import { accounts, testClient } from '@wagmi/test'
+import { renderHook } from '@wagmi/test/react'
+import { parseEther } from 'viem'
+import { expect, test, vi } from 'vitest'
 
 import { useBlock } from './useBlock.js'
 
 test('mounts', async () => {
-  await testClient.mainnet.resetFork()
+  const { result } = await renderHook(() => useBlock())
 
-  const { result } = renderHook(() => useBlock())
-
-  await waitFor(() => expect(result.current.isSuccess).toBeTruthy())
+  await vi.waitUntil(() => result.current.isSuccess, { timeout: 10_000 })
 
   const { data, ...rest } = result.current
   expect(data).toBeDefined()
@@ -49,21 +48,52 @@ test('mounts', async () => {
 })
 
 test('parameters: watch', async () => {
-  await testClient.mainnet.resetFork()
+  await testClient.mainnet.restart()
 
-  const { result } = renderHook(() => useBlock({ watch: true }))
+  const { result } = await renderHook(() => useBlock({ watch: true }))
 
-  await waitFor(() => expect(result.current.isSuccess).toBeTruthy())
+  await vi.waitUntil(() => result.current.isSuccess, { timeout: 10_000 })
   const block = result.current.data!
   expect(block).toBeDefined()
 
   await testClient.mainnet.mine({ blocks: 1 })
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(result.current.data?.number).toEqual(block.number + 1n)
   })
 
   await testClient.mainnet.mine({ blocks: 1 })
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(result.current.data?.number).toEqual(block.number + 2n)
   })
+})
+
+test('parameters: watch (includeTransactions)', async () => {
+  await testClient.mainnet.mine({ blocks: 1 })
+
+  const { result } = await renderHook(() =>
+    useBlock({ includeTransactions: true, watch: true }),
+  )
+
+  await vi.waitUntil(() => result.current.isSuccess, { timeout: 10_000 })
+  const block = result.current.data!
+  expect(block).toBeDefined()
+
+  await testClient.mainnet.setBalance({
+    address: accounts[0],
+    value: parseEther('10'),
+  })
+  await testClient.mainnet.sendUnsignedTransaction({
+    from: accounts[0],
+    to: accounts[1],
+    value: parseEther('1'),
+  })
+  await testClient.mainnet.mine({ blocks: 1 })
+
+  await vi.waitFor(() => {
+    expect(result.current.data?.number).toEqual(block.number + 1n)
+  })
+
+  const transactions = result.current.data!.transactions
+  expect(transactions.length).toBeGreaterThan(0)
+  expect(typeof transactions[0]).not.toBe('string')
 })

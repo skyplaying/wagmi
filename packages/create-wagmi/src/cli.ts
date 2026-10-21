@@ -45,7 +45,9 @@ const cwd = process.cwd()
 
 const renameFiles: Record<string, string | undefined> = {
   '_env.local': '.env.local',
+  // https://github.com/npm/npm/issues/1862
   _gitignore: '.gitignore',
+  _npmrc: '.npmrc',
 }
 
 const defaultTargetDir = 'wagmi-project'
@@ -96,7 +98,7 @@ async function init() {
         {
           type(_, { overwrite }: { overwrite?: boolean }) {
             if (overwrite === false)
-              throw new Error(`${pc.red('✖')} Operation cancelled`)
+              throw new Error(`${pc.red('×')} Operation cancelled`)
             return null
           },
           name: 'overwriteChecker',
@@ -152,7 +154,7 @@ async function init() {
       ],
       {
         onCancel() {
-          throw new Error(`${pc.red('✖')} Operation cancelled`)
+          throw new Error(`${pc.red('×')} Operation cancelled`)
         },
       },
     )
@@ -269,5 +271,6 @@ async function init() {
 }
 
 init().catch((e) => {
+  // biome-ignore lint/suspicious/noConsole: logging error
   console.error(e)
 })

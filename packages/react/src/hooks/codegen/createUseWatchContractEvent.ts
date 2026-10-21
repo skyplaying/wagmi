@@ -1,21 +1,18 @@
-import {
-  type Config,
-  type ResolvedRegister,
-  type WatchContractEventParameters,
+import type {
+  Config,
+  ResolvedRegister,
+  WatchContractEventParameters,
 } from '@wagmi/core'
-import {
-  type UnionEvaluate,
-  type UnionOmit,
-  type UnionPartial,
+import type {
+  ConfigParameter,
+  EnabledParameter,
+  UnionCompute,
+  UnionExactPartial,
+  UnionStrictOmit,
 } from '@wagmi/core/internal'
-import { type Abi, type Address, type ContractEventName } from 'viem'
-
-import {
-  type ConfigParameter,
-  type EnabledParameter,
-} from '../../types/properties.js'
-import { useAccount } from '../useAccount.js'
+import type { Abi, Address, ContractEventName } from 'viem'
 import { useChainId } from '../useChainId.js'
+import { useConfig } from '../useConfig.js'
 import { useWatchContractEvent } from '../useWatchContractEvent.js'
 
 export type CreateUseWatchContractEventParameters<
@@ -44,11 +41,12 @@ export type CreateUseWatchContractEventReturnType<
     : ContractEventName<abi>,
   strict extends boolean | undefined = undefined,
   config extends Config = ResolvedRegister['config'],
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
 >(
-  parameters?: UnionEvaluate<
-    UnionPartial<
-      UnionOmit<
+  parameters?: UnionCompute<
+    UnionExactPartial<
+      UnionStrictOmit<
         WatchContractEventParameters<abi, name, strict, config, chainId>,
         omittedProperties
       >
@@ -69,30 +67,28 @@ export function createUseWatchContractEvent<
     | undefined = undefined,
   eventName extends ContractEventName<abi> | undefined = undefined,
 >(
-  config: CreateUseWatchContractEventParameters<abi, address, eventName>,
+  props: CreateUseWatchContractEventParameters<abi, address, eventName>,
 ): CreateUseWatchContractEventReturnType<abi, address, eventName> {
-  if (config.address !== undefined && typeof config.address === 'object')
+  if (props.address !== undefined && typeof props.address === 'object')
     return (parameters) => {
-      const configChainId = useChainId()
-      const account = useAccount()
+      const config = useConfig(parameters)
+      const configChainId = useChainId({ config })
       const chainId =
-        (parameters as { chainId?: number })?.chainId ??
-        account.chainId ??
-        configChainId
+        (parameters as { chainId?: number })?.chainId ?? configChainId
       return useWatchContractEvent({
         ...(parameters as any),
-        ...(config.eventName ? { eventName: config.eventName } : {}),
-        address: config.address?.[chainId],
-        abi: config.abi,
+        ...(props.eventName ? { eventName: props.eventName } : {}),
+        address: props.address?.[chainId],
+        abi: props.abi,
       })
     }
 
   return (parameters) => {
     return useWatchContractEvent({
       ...(parameters as any),
-      ...(config.address ? { address: config.address } : {}),
-      ...(config.eventName ? { eventName: config.eventName } : {}),
-      abi: config.abi,
+      ...(props.address ? { address: props.address } : {}),
+      ...(props.eventName ? { eventName: props.eventName } : {}),
+      abi: props.abi,
     })
   }
 }

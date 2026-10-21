@@ -5,13 +5,15 @@ import * as connectors from './connectors.js'
 test('exports', () => {
   expect(Object.keys(connectors)).toMatchInlineSnapshot(`
     [
-      "injected",
-      "mock",
+      "baseAccount",
       "coinbaseWallet",
+      "injected",
       "metaMask",
+      "mock",
       "safe",
-      "walletConnect",
+      "tempoWallet",
       "version",
+      "walletConnect",
     ]
   `)
 })

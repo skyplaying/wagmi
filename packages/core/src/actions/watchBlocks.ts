@@ -1,30 +1,31 @@
+import type { BlockTag, Chain, Transport, WebSocketTransport } from 'viem'
 import {
   type WatchBlocksParameters as viem_WatchBlocksParameters,
   type WatchBlocksReturnType as viem_WatchBlocksReturnType,
   watchBlocks as viem_watchBlocks,
 } from 'viem/actions'
-
-import type { BlockTag, Chain, Transport, WebSocketTransport } from 'viem'
-import { type Config } from '../createConfig.js'
+import type { Config } from '../createConfig.js'
 import type { SelectChains } from '../types/chain.js'
 import type {
   ChainIdParameter,
   SyncConnectedChainParameter,
 } from '../types/properties.js'
-import type { IsNarrowable, UnionEvaluate } from '../types/utils.js'
+import type { IsNarrowable, UnionCompute } from '../types/utils.js'
 import { getAction } from '../utils/getAction.js'
 
 export type WatchBlocksParameters<
   includeTransactions extends boolean = false,
   blockTag extends BlockTag = 'latest',
   config extends Config = Config,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   ///
   chains extends readonly Chain[] = SelectChains<config, chainId>,
 > = {
-  [key in keyof chains]: UnionEvaluate<
+  [key in keyof chains]: UnionCompute<
     viem_WatchBlocksParameters<
-      config['_internal']['transports'][chains[key]['id']] extends infer transport extends Transport
+      config['_internal']['transports'][chains[key]['id']] extends infer transport extends
+        Transport
         ? Transport extends transport
           ? WebSocketTransport
           : transport
@@ -44,7 +45,8 @@ export type WatchBlocksReturnType = viem_WatchBlocksReturnType
 /** https://wagmi.sh/core/actions/watchBlocks */
 export function watchBlocks<
   config extends Config,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   includeTransactions extends boolean = false,
   blockTag extends BlockTag = 'latest',
 >(

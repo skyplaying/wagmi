@@ -1,7 +1,6 @@
-import { type Abi } from 'abitype'
-import { type Address } from 'viem'
+import type { Abi, Address } from 'viem'
 
-import { type Evaluate, type MaybeArray, type MaybePromise } from './types.js'
+import type { Compute, MaybeArray, MaybePromise } from './types.js'
 
 export type ContractConfig<
   chainId extends number = number,
@@ -37,7 +36,7 @@ export type ContractConfig<
   name: string
 }
 
-export type Contract = Evaluate<
+export type Contract = Compute<
   ContractConfig & {
     /** Generated string content */
     content: string

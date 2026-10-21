@@ -1,21 +1,20 @@
-import {
-  type Abi,
-  type Account,
-  type Address,
-  type Chain,
-  type ContractFunctionArgs,
-  type ContractFunctionName,
-  type SimulateContractParameters as viem_SimulateContractParameters,
+import type {
+  Abi,
+  Account,
+  Address,
+  Chain,
+  ContractFunctionArgs,
+  ContractFunctionName,
+  SimulateContractParameters as viem_SimulateContractParameters,
 } from 'viem'
 
-import { type Config } from '../../createConfig.js'
-import { type SelectChains } from '../../types/chain.js'
-import {
-  type ChainIdParameter,
-  type ConnectorParameter,
+import type { Config } from '../../createConfig.js'
+import type { SelectChains } from '../../types/chain.js'
+import type {
+  ChainIdParameter,
+  ConnectorParameter,
 } from '../../types/properties.js'
-import { type UnionEvaluate, type UnionOmit } from '../../types/utils.js'
-import { getAccount } from '../getAccount.js'
+import type { UnionCompute, UnionStrictOmit } from '../../types/utils.js'
 import { getChainId } from '../getChainId.js'
 import {
   type SimulateContractReturnType,
@@ -55,8 +54,8 @@ export type CreateSimulateContractReturnType<
 >(
   config: config,
   parameters: {
-    [key in keyof chains]: UnionEvaluate<
-      UnionOmit<
+    [key in keyof chains]: UnionCompute<
+      UnionStrictOmit<
         viem_SimulateContractParameters<
           abi,
           name,
@@ -98,11 +97,8 @@ export function createSimulateContract<
   if (c.address !== undefined && typeof c.address === 'object')
     return (config, parameters) => {
       const configChainId = getChainId(config)
-      const account = getAccount(config)
       const chainId =
-        (parameters as { chainId?: number })?.chainId ??
-        account.chainId ??
-        configChainId
+        (parameters as { chainId?: number })?.chainId ?? configChainId
       return simulateContract(config, {
         ...(parameters as any),
         ...(c.functionName ? { functionName: c.functionName } : {}),

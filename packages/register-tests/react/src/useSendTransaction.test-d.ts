@@ -2,17 +2,15 @@ import { config } from '@wagmi/test'
 import { expectTypeOf, test } from 'vitest'
 import { useSendTransaction } from 'wagmi'
 import { celo, mainnet, optimism } from 'wagmi/chains'
-import { type ChainId } from './config.js'
+import type { ChainId } from './config.js'
 
 test('chain formatters', () => {
-  const { sendTransaction } = useSendTransaction()
+  const { mutate } = useSendTransaction()
 
-  sendTransaction(
+  mutate(
     {
       to: '0x',
       feeCurrency: '0x',
-      gatewayFee: 123n,
-      gatewayFeeRecipient: '0x',
     },
     {
       onSuccess(_data, variables) {
@@ -21,45 +19,35 @@ test('chain formatters', () => {
     },
   )
 
-  type Result = Parameters<typeof sendTransaction<typeof celo.id>>[0]
+  type Result = Parameters<typeof mutate<typeof celo.id>>[0]
   expectTypeOf<Result['feeCurrency']>().toEqualTypeOf<
     `0x${string}` | undefined
   >()
-  expectTypeOf<Result['gatewayFee']>().toEqualTypeOf<bigint | undefined>()
-  expectTypeOf<Result['gatewayFeeRecipient']>().toEqualTypeOf<
-    `0x${string}` | undefined
-  >()
-  sendTransaction({
+  mutate({
     chainId: celo.id,
     to: '0x',
     feeCurrency: '0x',
-    gatewayFee: 123n,
-    gatewayFeeRecipient: '0x',
   })
 
-  sendTransaction({
+  mutate({
     chainId: mainnet.id,
     to: '0x',
     // @ts-expect-error
     feeCurrency: '0x',
-    gatewayFee: 123n,
-    gatewayFeeRecipient: '0x',
   })
 
-  sendTransaction({
+  mutate({
     chainId: optimism.id,
     to: '0x',
     // @ts-expect-error
     feeCurrency: '0x',
-    gatewayFee: 123n,
-    gatewayFeeRecipient: '0x',
   })
 })
 
 test('parameters: config', async () => {
-  const { sendTransaction } = useSendTransaction({ config })
+  const { mutate } = useSendTransaction({ config })
 
-  sendTransaction({
+  mutate({
     to: '0x',
     // @ts-expect-error
     feeCurrency: '0x',

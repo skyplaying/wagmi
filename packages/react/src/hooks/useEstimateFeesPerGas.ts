@@ -1,21 +1,16 @@
 'use client'
-
-import {
-  type Config,
-  type EstimateFeesPerGasErrorType,
-  type ResolvedRegister,
+import type {
+  Config,
+  EstimateFeesPerGasErrorType,
+  ResolvedRegister,
 } from '@wagmi/core'
-import { type Evaluate } from '@wagmi/core/internal'
+import type { Compute, ConfigParameter } from '@wagmi/core/internal'
 import {
   type EstimateFeesPerGasData,
   type EstimateFeesPerGasOptions,
-  type EstimateFeesPerGasQueryFnData,
-  type EstimateFeesPerGasQueryKey,
   estimateFeesPerGasQueryOptions,
 } from '@wagmi/core/query'
 import type { FeeValuesType } from 'viem'
-
-import type { ConfigParameter, QueryParameter } from '../types/properties.js'
 import { type UseQueryReturnType, useQuery } from '../utils/query.js'
 import { useChainId } from './useChainId.js'
 import { useConfig } from './useConfig.js'
@@ -24,15 +19,8 @@ export type UseEstimateFeesPerGasParameters<
   type extends FeeValuesType = FeeValuesType,
   config extends Config = Config,
   selectData = EstimateFeesPerGasData<type>,
-> = Evaluate<
-  EstimateFeesPerGasOptions<type, config> &
-    ConfigParameter<config> &
-    QueryParameter<
-      EstimateFeesPerGasQueryFnData<type>,
-      EstimateFeesPerGasErrorType,
-      selectData,
-      EstimateFeesPerGasQueryKey<config, type>
-    >
+> = Compute<
+  EstimateFeesPerGasOptions<type, config, selectData> & ConfigParameter<config>
 >
 
 export type UseEstimateFeesPerGasReturnType<
@@ -48,15 +36,11 @@ export function useEstimateFeesPerGas<
 >(
   parameters: UseEstimateFeesPerGasParameters<type, config, selectData> = {},
 ): UseEstimateFeesPerGasReturnType<type, selectData> {
-  const { query = {} } = parameters
-
   const config = useConfig(parameters)
-  const chainId = useChainId()
-
+  const chainId = useChainId({ config })
   const options = estimateFeesPerGasQueryOptions(config, {
     ...parameters,
     chainId: parameters.chainId ?? chainId,
   })
-
-  return useQuery({ ...query, ...options })
+  return useQuery(options)
 }

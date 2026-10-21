@@ -1,59 +1,43 @@
 'use client'
-
 import { useMutation } from '@tanstack/react-query'
-import {
-  type Config,
-  type ConnectErrorType,
-  type Connector,
-  type ResolvedRegister,
-} from '@wagmi/core'
-import type { Evaluate } from '@wagmi/core/internal'
+import type { Config, ConnectErrorType, ResolvedRegister } from '@wagmi/core'
+import type { Compute, ConfigParameter } from '@wagmi/core/internal'
 import {
   type ConnectData,
   type ConnectMutate,
   type ConnectMutateAsync,
+  type ConnectOptions,
   type ConnectVariables,
   connectMutationOptions,
 } from '@wagmi/core/query'
 import { useEffect } from 'react'
-
-import type { ConfigParameter } from '../types/properties.js'
-import type {
-  UseMutationParameters,
-  UseMutationReturnType,
-} from '../utils/query.js'
+import type { UseMutationReturnType } from '../utils/query.js'
 import { useConfig } from './useConfig.js'
-import { useConnectors } from './useConnectors.js'
+import { type UseConnectorsReturnType, useConnectors } from './useConnectors.js'
 
 export type UseConnectParameters<
   config extends Config = Config,
   context = unknown,
-> = Evaluate<
-  ConfigParameter<config> & {
-    mutation?:
-      | UseMutationParameters<
-          ConnectData<config>,
-          ConnectErrorType,
-          ConnectVariables<config>,
-          context
-        >
-      | undefined
-  }
->
+> = Compute<ConfigParameter<config> & ConnectOptions<config, context>>
 
 export type UseConnectReturnType<
   config extends Config = Config,
   context = unknown,
-> = Evaluate<
+> = Compute<
   UseMutationReturnType<
-    ConnectData<config>,
+    ConnectData<config, config['connectors'][number], boolean>,
     ConnectErrorType,
-    ConnectVariables<config>,
-    context
+    ConnectVariables<config, config['connectors'][number], boolean>,
+    context,
+    ConnectMutate<config, context>,
+    ConnectMutateAsync<config, context>
   > & {
+    /** @deprecated use `mutate` instead */
     connect: ConnectMutate<config, context>
+    /** @deprecated use `mutateAsync` instead */
     connectAsync: ConnectMutateAsync<config, context>
-    connectors: readonly Connector[]
+    /** @deprecated use `useConnectors` instead */
+    connectors: Compute<UseConnectorsReturnType> | config['connectors']
   }
 >
 
@@ -64,16 +48,9 @@ export function useConnect<
 >(
   parameters: UseConnectParameters<config, context> = {},
 ): UseConnectReturnType<config, context> {
-  const { mutation } = parameters
-
   const config = useConfig(parameters)
-  const connectors = useConnectors({ config })
-
-  const mutationOptions = connectMutationOptions(config)
-  const { mutate, mutateAsync, ...result } = useMutation({
-    ...mutation,
-    ...mutationOptions,
-  })
+  const options = connectMutationOptions(config, parameters)
+  const mutation = useMutation(options)
 
   // Reset mutation back to an idle state when the connector disconnects.
   useEffect(() => {
@@ -81,15 +58,16 @@ export function useConnect<
       ({ status }) => status,
       (status, previousStatus) => {
         if (previousStatus === 'connected' && status === 'disconnected')
-          result.reset()
+          mutation.reset()
       },
     )
-  }, [config, result])
+  }, [config, mutation.reset])
 
+  type Return = UseConnectReturnType<config, context>
   return {
-    ...result,
-    connect: mutate,
-    connectAsync: mutateAsync,
-    connectors,
+    ...(mutation as Return),
+    connect: mutation.mutate as Return['mutate'],
+    connectAsync: mutation.mutateAsync as Return['mutateAsync'],
+    connectors: useConnectors({ config }),
   }
 }

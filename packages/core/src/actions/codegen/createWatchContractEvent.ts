@@ -1,8 +1,7 @@
-import { type Abi, type Address, type ContractEventName } from 'viem'
+import type { Abi, Address, ContractEventName } from 'viem'
 
-import { type Config } from '../../createConfig.js'
-import { type UnionEvaluate, type UnionOmit } from '../../types/utils.js'
-import { getAccount } from '../getAccount.js'
+import type { Config } from '../../createConfig.js'
+import type { UnionCompute, UnionStrictOmit } from '../../types/utils.js'
 import { getChainId } from '../getChainId.js'
 import {
   type WatchContractEventParameters,
@@ -36,11 +35,12 @@ export type CreateWatchContractEventReturnType<
     ? eventName
     : ContractEventName<abi>,
   strict extends boolean | undefined = undefined,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
 >(
   config: config,
-  parameters: UnionEvaluate<
-    UnionOmit<
+  parameters: UnionCompute<
+    UnionStrictOmit<
       WatchContractEventParameters<abi, name, strict, config, chainId>,
       omittedProperties
     >
@@ -63,14 +63,11 @@ export function createWatchContractEvent<
   if (c.address !== undefined && typeof c.address === 'object')
     return (config, parameters) => {
       const configChainId = getChainId(config)
-      const account = getAccount(config)
       const chainId =
-        (parameters as { chainId?: number })?.chainId ??
-        account.chainId ??
-        configChainId
+        (parameters as { chainId?: number })?.chainId ?? configChainId
       return watchContractEvent(config, {
         ...(parameters as any),
-        ...(c.eventName ? { functionName: c.eventName } : {}),
+        ...(c.eventName ? { eventName: c.eventName } : {}),
         address: c.address?.[chainId],
         abi: c.abi,
       })
@@ -80,7 +77,7 @@ export function createWatchContractEvent<
     return watchContractEvent(config, {
       ...(parameters as any),
       ...(c.address ? { address: c.address } : {}),
-      ...(c.eventName ? { functionName: c.eventName } : {}),
+      ...(c.eventName ? { eventName: c.eventName } : {}),
       abi: c.abi,
     })
   }

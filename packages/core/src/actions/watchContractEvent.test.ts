@@ -7,17 +7,26 @@ import {
   transactionHashRegex,
   wait,
 } from '@wagmi/test'
-import { http, createWalletClient, parseEther } from 'viem'
+import { createWalletClient, erc20Abi, http, parseEther } from 'viem'
 import type { WatchEventOnLogsParameter } from 'viem/actions'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 
 import { connect } from './connect.js'
 import { disconnect } from './disconnect.js'
-import { getBalance } from './getBalance.js'
+import { readContract } from './readContract.js'
 import { watchContractEvent } from './watchContractEvent.js'
 import { writeContract } from './writeContract.js'
 
 const connector = config.connectors[0]!
+
+// TODO: Some test does not call disconnect after finishing. Remove once fixing it.
+beforeEach(async () => {
+  if (config.state.current) {
+    const connection = config.state.connections.get(config.state.current)!
+    const connector = connection.connector
+    await disconnect(config, { connector })
+  }
+})
 
 test('default', async () => {
   const data = await connect(config, { connector })
@@ -44,11 +53,13 @@ test('default', async () => {
     address: address.usdcHolder,
   })
 
-  const balance = await getBalance(config, {
-    address: connectedAddress,
-    token: address.usdc,
+  const balance = await readContract(config, {
+    address: address.usdc,
+    abi: erc20Abi,
+    functionName: 'balanceOf',
+    args: [connectedAddress],
   })
-  expect(balance.value).toBeGreaterThan(0n)
+  expect(balance).toBeGreaterThan(0n)
 
   // start watching transfer events
   let logs: WatchEventOnLogsParameter = []
@@ -80,6 +91,7 @@ test('default', async () => {
   await wait(1000) // wait for events to be emitted
 
   unwatch()
+  await wait(100)
   expect(logs.length).toBe(2)
   expect(logs[0]?.transactionHash).toMatch(transactionHashRegex)
 

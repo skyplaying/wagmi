@@ -1,6 +1,6 @@
-import { abi, address, chain } from '@wagmi/test'
+import { abi, address, chain, wait } from '@wagmi/test'
 import { renderHook } from '@wagmi/test/react'
-import { type WatchEventOnLogsParameter } from 'viem'
+import type { WatchEventOnLogsParameter } from 'viem'
 import { test } from 'vitest'
 
 import { createUseWatchContractEvent } from './createUseWatchContractEvent.js'
@@ -20,6 +20,7 @@ test('default', async () => {
       },
     }),
   )
+  await wait(500)
 })
 
 test('multichain', async () => {
@@ -41,4 +42,5 @@ test('multichain', async () => {
       },
     }),
   )
+  await wait(500)
 })

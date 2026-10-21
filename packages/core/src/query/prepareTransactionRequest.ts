@@ -1,6 +1,4 @@
-import { type QueryOptions } from '@tanstack/query-core'
-
-import { type PrepareTransactionRequestRequest as viem_PrepareTransactionRequestRequest } from 'viem'
+import type { PrepareTransactionRequestRequest as viem_PrepareTransactionRequestRequest } from 'viem'
 
 import {
   type PrepareTransactionRequestErrorType,
@@ -8,10 +6,11 @@ import {
   type PrepareTransactionRequestReturnType,
   prepareTransactionRequest,
 } from '../actions/prepareTransactionRequest.js'
-import { type Config } from '../createConfig.js'
+import type { Config } from '../createConfig.js'
 import type { SelectChains } from '../types/chain.js'
-import { type ScopeKeyParameter } from '../types/properties.js'
-import { type UnionPartial } from '../types/utils.js'
+import type { ScopeKeyParameter } from '../types/properties.js'
+import type { QueryOptions, QueryParameter } from '../types/query.js'
+import type { UnionExactPartial } from '../types/utils.js'
 import { filterQueryOptions } from './utils.js'
 
 export type PrepareTransactionRequestOptions<
@@ -21,10 +20,17 @@ export type PrepareTransactionRequestOptions<
     SelectChains<config, chainId>[0],
     SelectChains<config, chainId>[0]
   >,
-> = UnionPartial<
+  selectData = PrepareTransactionRequestData<config, chainId, request>,
+> = UnionExactPartial<
   PrepareTransactionRequestParameters<config, chainId, request>
 > &
-  ScopeKeyParameter
+  ScopeKeyParameter &
+  QueryParameter<
+    PrepareTransactionRequestQueryFnData<config, chainId, request>,
+    PrepareTransactionRequestErrorType,
+    selectData,
+    PrepareTransactionRequestQueryKey<config, chainId, request>
+  >
 
 export function prepareTransactionRequestQueryOptions<
   config extends Config,
@@ -33,33 +39,40 @@ export function prepareTransactionRequestQueryOptions<
     SelectChains<config, chainId>[0],
     SelectChains<config, chainId>[0]
   >,
+  selectData = PrepareTransactionRequestData<config, chainId, request>,
 >(
   config: config,
   options: PrepareTransactionRequestOptions<
     config,
     chainId,
-    request
+    request,
+    selectData
   > = {} as any,
-) {
+): PrepareTransactionRequestQueryOptions<config, chainId, request, selectData> {
+  const hasCalls = Array.isArray(options.calls) && options.calls.length > 0
   return {
-    queryFn({ queryKey }) {
-      const { scopeKey: _, to, ...parameters } = queryKey[1]
-      if (!to) throw new Error('to is required')
+    ...options.query,
+    enabled: Boolean(
+      (options.to || hasCalls) && (options.query?.enabled ?? true),
+    ),
+    queryFn: async (context) => {
+      const [, { scopeKey: _, ...parameters }] = context.queryKey
+      const hasCalls =
+        Array.isArray(parameters.calls) && parameters.calls.length > 0
+      if (!parameters.to && !hasCalls)
+        throw new Error('to or calls is required')
       return prepareTransactionRequest(config, {
-        to,
         ...(parameters as any),
       }) as unknown as Promise<
         PrepareTransactionRequestQueryFnData<config, chainId, request>
       >
     },
-    queryKey: prepareTransactionRequestQueryKey(options),
-  } as const satisfies QueryOptions<
-    PrepareTransactionRequestQueryFnData<config, chainId, request>,
-    PrepareTransactionRequestErrorType,
-    PrepareTransactionRequestData<config, chainId, request>,
-    PrepareTransactionRequestQueryKey<config, chainId, request>
-  >
+    queryKey: prepareTransactionRequestQueryKey(
+      options,
+    ) as PrepareTransactionRequestQueryKey<config, chainId, request>,
+  }
 }
+
 export type PrepareTransactionRequestQueryFnData<
   config extends Config,
   chainId extends config['chains'][number]['id'] | undefined,
@@ -85,9 +98,13 @@ export function prepareTransactionRequestQueryKey<
     SelectChains<config, chainId>[0],
     SelectChains<config, chainId>[0]
   >,
->(options: PrepareTransactionRequestOptions<config, chainId, request>) {
-  const { connector: _c, ...rest } = options
-  return ['prepareTransactionRequest', filterQueryOptions(rest)] as const
+>(
+  options: UnionExactPartial<
+    PrepareTransactionRequestParameters<config, chainId, request>
+  > &
+    ScopeKeyParameter = {} as any,
+) {
+  return ['prepareTransactionRequest', filterQueryOptions(options)] as const
 }
 
 export type PrepareTransactionRequestQueryKey<
@@ -99,4 +116,19 @@ export type PrepareTransactionRequestQueryKey<
   >,
 > = ReturnType<
   typeof prepareTransactionRequestQueryKey<config, chainId, request>
+>
+
+export type PrepareTransactionRequestQueryOptions<
+  config extends Config,
+  chainId extends config['chains'][number]['id'] | undefined,
+  request extends viem_PrepareTransactionRequestRequest<
+    SelectChains<config, chainId>[0],
+    SelectChains<config, chainId>[0]
+  >,
+  selectData = PrepareTransactionRequestData<config, chainId, request>,
+> = QueryOptions<
+  PrepareTransactionRequestQueryFnData<config, chainId, request>,
+  PrepareTransactionRequestErrorType,
+  selectData,
+  PrepareTransactionRequestQueryKey<config, chainId, request>
 >

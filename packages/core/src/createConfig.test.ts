@@ -1,15 +1,49 @@
 import { accounts, chain, wait } from '@wagmi/test'
+import {
+  announceProvider,
+  type EIP1193Provider,
+  type EIP6963ProviderDetail,
+} from 'mipd'
 import { http } from 'viem'
 import { expect, test, vi } from 'vitest'
 
 import { connect } from './actions/connect.js'
 import { disconnect } from './actions/disconnect.js'
 import { switchChain } from './actions/switchChain.js'
+import { createConnector } from './connectors/createConnector.js'
 import { mock } from './connectors/mock.js'
-import { createConfig } from './createConfig.js'
+import {
+  type Connection,
+  type Connector,
+  createConfig,
+} from './createConfig.js'
 import { createStorage } from './createStorage.js'
+import { serialize } from './utils/serialize.js'
 
 const { mainnet, optimism } = chain
+
+vi.mock(import('mipd'), async (importOriginal) => {
+  const mod = await importOriginal()
+
+  let cache: typeof mod | undefined
+  if (!cache)
+    cache = {
+      ...mod,
+      createStore() {
+        const store = mod.createStore()
+        return {
+          ...store,
+          getProviders() {
+            return [
+              getProviderDetail({ name: 'Example', rdns: 'com.example' }),
+              getProviderDetail({ name: 'Mock', rdns: 'com.mock' }),
+            ]
+          },
+        }
+      },
+    }
+  return cache
+})
 
 test('default', () => {
   const config = createConfig({
@@ -49,9 +83,9 @@ test('getClient', () => {
       chainId: 123456,
     }),
   ).toThrowErrorMatchingInlineSnapshot(`
-    "Chain not configured.
+    [ChainNotConfiguredError: Chain not configured.
 
-    Version: @wagmi/core@x.y.z"
+    Version: @wagmi/core@x.y.z]
   `)
 
   expect(() => {
@@ -59,9 +93,9 @@ test('getClient', () => {
     config.state.chainId = 123456
     config.getClient()
   }).toThrowErrorMatchingInlineSnapshot(`
-    "Chain not configured.
+    [ChainNotConfiguredError: Chain not configured.
 
-    Version: @wagmi/core@x.y.z"
+    Version: @wagmi/core@x.y.z]
   `)
 })
 
@@ -126,7 +160,7 @@ test('behavior: migrate for current version', async () => {
         chainId: 1,
         current: '983b8aca245',
       },
-      version: NaN, // mocked version is `'x.y.z'`, which will get interpreted as `NaN`
+      version: Number.NaN, // mocked version is `'x.y.z'`, which will get interpreted as `NaN`
     }),
   } as Record<string, string>
   Object.defineProperty(window, 'localStorage', {
@@ -199,9 +233,12 @@ test('behavior: migrate chainId', async () => {
   })
 
   const config = createConfig({
-    chains: [mainnet],
+    chains: [mainnet, optimism],
     storage,
-    transports: { [mainnet.id]: http() },
+    transports: {
+      [mainnet.id]: http(),
+      [optimism.id]: http(),
+    },
   })
 
   await wait(100)
@@ -210,7 +247,7 @@ test('behavior: migrate chainId', async () => {
     {
       "chainId": 10,
       "connections": Map {},
-      "current": undefined,
+      "current": null,
       "status": "disconnected",
     }
   `)
@@ -285,3 +322,209 @@ test('behavior: properties passed through to Viem Client via getClient', () => {
     `)
   }
 })
+
+test('behavior: restore unconfigured chainId', () => {
+  const state = {
+    'wagmi.store': JSON.stringify({
+      state: { chainId: 10 },
+      version: 1,
+    }),
+  } as Record<string, string>
+  Object.defineProperty(window, 'localStorage', {
+    value: {
+      getItem: vi.fn((key) => state[key] ?? null),
+      removeItem: vi.fn((key) => state.delete?.[key]),
+      setItem: vi.fn((key, value) => {
+        state[key] = value
+      }),
+    },
+    writable: true,
+  })
+
+  const storage = createStorage<{ store: object }>({
+    storage: window.localStorage,
+  })
+
+  const config = createConfig({
+    chains: [mainnet],
+    storage,
+    transports: {
+      [mainnet.id]: http(),
+    },
+  })
+
+  expect(config.state).toMatchInlineSnapshot(`
+    {
+      "chainId": 1,
+      "connections": Map {},
+      "current": null,
+      "status": "disconnected",
+    }
+  `)
+
+  const client = config.getClient()
+  expect(client.chain.id).toBe(mainnet.id)
+})
+
+test('behavior: setup connector', async () => {
+  const config = createConfig({
+    chains: [mainnet],
+    transports: {
+      [mainnet.id]: http(),
+    },
+  })
+
+  const connectorFn = mock({ accounts })
+  const connector = config._internal.connectors.setup(connectorFn)
+  config._internal.connectors.setState((x) => [...x, connector])
+
+  await connect(config, {
+    chainId: mainnet.id,
+    connector: config.connectors.find((x) => x.uid === connector.uid)!,
+  })
+
+  expect(config.state.current).toBe(connector.uid)
+
+  await disconnect(config)
+})
+
+test('behavior: eip 6963 providers', async () => {
+  const detail_1 = getProviderDetail({ name: 'Foo Wallet', rdns: 'com.foo' })
+  const detail_2 = getProviderDetail({ name: 'Bar Wallet', rdns: 'com.bar' })
+  const detail_3 = getProviderDetail({ name: 'Mock', rdns: 'com.mock' })
+
+  const config = createConfig({
+    chains: [mainnet],
+    connectors: [
+      createConnector((c) => {
+        return {
+          ...mock({ accounts })(c),
+          rdns: ['com.mock', 'com.baz'],
+        }
+      }),
+    ],
+    transports: {
+      [mainnet.id]: http(),
+    },
+  })
+
+  await wait(100)
+  announceProvider(detail_1)()
+  await wait(100)
+  announceProvider(detail_1)()
+  await wait(100)
+  announceProvider(detail_2)()
+  await wait(100)
+  announceProvider(detail_3)()
+  await wait(100)
+
+  expect(
+    config.connectors.flatMap((x) => x.rdns ?? x.id),
+  ).toMatchInlineSnapshot(`
+    [
+      "com.mock",
+      "com.baz",
+      "com.example",
+      "com.foo",
+      "com.bar",
+    ]
+  `)
+})
+
+test('behavior: revalidate connections', async () => {
+  const state = {
+    'wagmi.store': serialize({
+      state: { chainId: 1 },
+      version: 1,
+    }),
+  } as Record<string, string>
+  Object.defineProperty(window, 'localStorage', {
+    value: {
+      getItem: vi.fn((key) => state[key] ?? null),
+      removeItem: vi.fn((key) => state.delete?.[key]),
+      setItem: vi.fn((key, value) => {
+        state[key] = value
+      }),
+    },
+    writable: true,
+  })
+
+  const config = createConfig({
+    chains: [mainnet],
+    connectors: [
+      mock({ accounts }),
+      mock({ accounts, features: { defaultConnected: true, reconnect: true } }),
+      mock({ accounts }),
+    ],
+    storage: createStorage<{ store: object }>({
+      storage: window.localStorage,
+    }),
+    transports: {
+      [mainnet.id]: http(),
+    },
+  })
+
+  const connections = new Map<string, Connection>()
+  const c1 = config.connectors.at(0)!
+  const c2 = config.connectors.at(1)!
+  const c3 = config.connectors.at(2)!
+  connections.set(c1.uid, { accounts: ['0x'], chainId: 1, connector: c1 })
+  connections.set(c2.uid, { accounts: ['0x'], chainId: 1, connector: c2 })
+  connections.set(c3.uid, { accounts: ['0x'], chainId: 1, connector: c3 })
+  connections.set('foo', {
+    accounts: ['0x'],
+    chainId: 1,
+    connector: {
+      id: 'foo',
+      name: 'foo',
+      type: 'foo',
+      uid: 'foo',
+    } as Connection['connector'],
+  })
+  config.setState((state) => ({ ...state, connections }))
+  await config._internal.revalidate()
+
+  expect([...config.state.connections.keys()]).toEqual([c2.uid])
+})
+
+test('behavior: revalidate removes connection if `isAuthorized` rejects', async () => {
+  const config = createConfig({
+    chains: [mainnet],
+    connectors: [
+      mock({ accounts, features: { defaultConnected: true, reconnect: true } }),
+      mock({ accounts, features: { defaultConnected: true, reconnect: true } }),
+    ],
+    storage: null,
+    transports: {
+      [mainnet.id]: http(),
+    },
+  })
+
+  const [c1, c2] = config.connectors as [Connector, Connector]
+  vi.spyOn(c1, 'isAuthorized').mockRejectedValueOnce(new Error('stale session'))
+  config.setState((state) => ({
+    ...state,
+    connections: new Map([
+      [c1.uid, { accounts: ['0x'], chainId: 1, connector: c1 }],
+      [c2.uid, { accounts: ['0x'], chainId: 1, connector: c2 }],
+    ]),
+    current: c1.uid,
+  }))
+
+  await expect(config._internal.revalidate()).resolves.toBeUndefined()
+  expect([...config.state.connections.keys()]).toEqual([c2.uid])
+  expect(config.state.current).toBeNull()
+})
+
+function getProviderDetail(
+  info: Pick<EIP6963ProviderDetail['info'], 'name' | 'rdns'>,
+): EIP6963ProviderDetail {
+  return {
+    info: {
+      icon: 'data:image/svg+xml,<svg width="32px" height="32px" viewBox="0 0 32 32"/>',
+      uuid: crypto.randomUUID(),
+      ...info,
+    },
+    provider: `<EIP1193Provider_${info.rdns}>` as unknown as EIP1193Provider,
+  }
+}

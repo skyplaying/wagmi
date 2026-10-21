@@ -1,19 +1,19 @@
-import { homedir } from 'os'
-import { default as fs } from 'fs-extra'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { homedir } from 'node:os'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 
 import {
   address,
   apiKey,
-  baseUrl,
-  handlers,
+  getHandlers,
   timeoutAddress,
   unverifiedContractAddress,
 } from '../../test/utils.js'
-import { fetch } from './fetch.js'
+import { fetch, getCacheDir } from './fetch.js'
 
-const server = setupServer(...handlers)
+const baseUrl = 'https://api.etherscan.io/v2/api'
+const server = setupServer(...getHandlers(baseUrl))
 
 beforeAll(() => server.listen())
 afterEach(() => server.resetHandlers())
@@ -39,7 +39,7 @@ test('fetches ABI', async () => {
       contracts: [{ name: 'WagmiMintExample', address }],
       request,
       parse,
-    }).contracts(),
+    }).contracts?.(),
   ).resolves.toMatchSnapshot()
 })
 
@@ -51,9 +51,9 @@ test('fails to fetch for unverified contract', async () => {
       ],
       request,
       parse,
-    }).contracts(),
+    }).contracts?.(),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
-    '"Contract source code not verified"',
+    '[Error: Contract source code not verified]',
   )
 })
 
@@ -64,13 +64,15 @@ test('aborts request', async () => {
       request,
       parse,
       timeoutDuration: 1_000,
-    }).contracts(),
-  ).rejects.toThrowErrorMatchingInlineSnapshot('"This operation was aborted"')
+    }).contracts?.(),
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    '[AbortError: This operation was aborted]',
+  )
 })
 
 test('reads from cache', async () => {
   const cacheDir = `${homedir}/.wagmi-cli/plugins/fetch/cache`
-  await fs.ensureDir(cacheDir)
+  await mkdir(cacheDir, { recursive: true })
 
   const contract = {
     name: 'WagmiMintExample',
@@ -78,25 +80,32 @@ test('reads from cache', async () => {
   } as const
   const cacheKey = JSON.stringify(contract)
   const cacheFilePath = `${cacheDir}/${cacheKey}.json`
-  await fs.writeJSON(cacheFilePath, {
-    abi: [
+  await writeFile(
+    cacheFilePath,
+    JSON.stringify(
       {
-        inputs: [],
-        name: 'mint',
-        outputs: [],
-        stateMutability: 'nonpayable',
-        type: 'function',
+        abi: [
+          {
+            inputs: [],
+            name: 'mint',
+            outputs: [],
+            stateMutability: 'nonpayable',
+            type: 'function',
+          },
+        ],
+        timestamp: Date.now() + 30_000,
       },
-    ],
-    timestamp: Date.now() + 30_000,
-  })
+      null,
+      2,
+    ),
+  )
 
   await expect(
     fetch({
       contracts: [contract],
       request,
       parse,
-    }).contracts(),
+    }).contracts?.(),
   ).resolves.toMatchInlineSnapshot(`
       [
         {
@@ -115,12 +124,12 @@ test('reads from cache', async () => {
       ]
     `)
 
-  await fs.rm(cacheDir, { recursive: true })
+  await rm(cacheDir, { recursive: true })
 })
 
 test('fails and reads from cache', async () => {
-  const cacheDir = `${homedir}/.wagmi-cli/plugins/fetch/cache`
-  await fs.ensureDir(cacheDir)
+  const cacheDir = getCacheDir()
+  await mkdir(cacheDir, { recursive: true })
 
   const contract = {
     name: 'WagmiMintExample',
@@ -128,18 +137,25 @@ test('fails and reads from cache', async () => {
   } as const
   const cacheKey = JSON.stringify(contract)
   const cacheFilePath = `${cacheDir}/${cacheKey}.json`
-  await fs.writeJSON(cacheFilePath, {
-    abi: [
+  await writeFile(
+    cacheFilePath,
+    JSON.stringify(
       {
-        inputs: [],
-        name: 'mint',
-        outputs: [],
-        stateMutability: 'nonpayable',
-        type: 'function',
+        abi: [
+          {
+            inputs: [],
+            name: 'mint',
+            outputs: [],
+            stateMutability: 'nonpayable',
+            type: 'function',
+          },
+        ],
+        timestamp: Date.now() - 30_000,
       },
-    ],
-    timestamp: Date.now() - 30_000,
-  })
+      null,
+      2,
+    ),
+  )
 
   await expect(
     fetch({
@@ -147,7 +163,7 @@ test('fails and reads from cache', async () => {
       request,
       parse,
       timeoutDuration: 1,
-    }).contracts(),
+    }).contracts?.(),
   ).resolves.toMatchInlineSnapshot(`
       [
         {
@@ -166,5 +182,5 @@ test('fails and reads from cache', async () => {
       ]
     `)
 
-  await fs.rm(cacheDir, { recursive: true })
+  await rm(cacheDir, { recursive: true })
 })

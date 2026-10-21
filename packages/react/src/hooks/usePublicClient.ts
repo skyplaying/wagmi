@@ -4,14 +4,12 @@ import {
   type Config,
   type GetPublicClientParameters,
   type GetPublicClientReturnType,
-  type ResolvedRegister,
   getPublicClient,
+  type ResolvedRegister,
   watchPublicClient,
 } from '@wagmi/core'
-import type { Evaluate } from '@wagmi/core/internal'
+import type { Compute, ConfigParameter } from '@wagmi/core/internal'
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector.js'
-
-import type { ConfigParameter } from '../types/properties.js'
 import { useConfig } from './useConfig.js'
 
 export type UsePublicClientParameters<
@@ -19,7 +17,7 @@ export type UsePublicClientParameters<
   chainId extends config['chains'][number]['id'] | number | undefined =
     | config['chains'][number]['id']
     | undefined,
-> = Evaluate<
+> = Compute<
   GetPublicClientParameters<config, chainId> & ConfigParameter<config>
 >
 

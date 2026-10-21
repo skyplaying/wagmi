@@ -1,4 +1,4 @@
-import { type Config, type Connector } from '../createConfig.js'
+import type { Config, Connector } from '../createConfig.js'
 
 export type ChainIdParameter<
   config extends Config,
@@ -12,8 +12,16 @@ export type ChainIdParameter<
     | undefined
 }
 
+export type ConfigParameter<config extends Config = Config> = {
+  config?: Config | config | undefined
+}
+
 export type ConnectorParameter = {
   connector?: Connector | undefined
+}
+
+export type EnabledParameter = {
+  enabled?: boolean | undefined
 }
 
 export type ScopeKeyParameter = { scopeKey?: string | undefined }

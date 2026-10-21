@@ -1,0 +1,74 @@
+# `zone.useZoneInfo`
+
+Hook for getting Tempo zone metadata and the latest imported Tempo block number.
+
+This hook expects a zone authorization token to already exist in storage. Use [`zone.useSignAuthorizationToken`](/tempo/hooks/zone.useSignAuthorizationToken) first.
+
+::: info Requires viem >=2.56.2
+Zone actions and hooks require `viem >=2.56.2`.
+:::
+
+## Usage
+
+::: code-group
+```ts [example.ts]
+import { Hooks } from 'wagmi/tempo'
+import { Zone } from 'viem/tempo'
+
+const zoneChain = Zone.b
+
+const { data: zoneInfo } = Hooks.zone.useZoneInfo({
+  chainId: zoneChain.id,
+  query: {
+    initialData: {
+      chainId: zoneChain.id,
+      sequencer: '0x0000000000000000000000000000000000000007',
+      tempoBlockNumber: 42n,
+      zoneId: 7,
+      zoneTokens: ['0x20c0000000000000000000000000000000000001'],
+    },
+  },
+})
+
+console.log('Zone ID:', zoneInfo?.zoneId)
+// @log: Zone ID: 7
+```
+
+```ts [wagmi.config.ts] filename="wagmi.config.ts"
+// @noErrors
+import { createConfig } from 'wagmi'
+import { webAuthn } from 'wagmi/tempo'
+import { http as zoneHttp, Zone } from 'viem/tempo'
+
+const zoneChain = Zone.b
+
+export const config = createConfig({
+  connectors: [webAuthn()],
+  chains: [zoneChain],
+  multiInjectedProviderDiscovery: false,
+  transports: {
+    [zoneChain.id]: zoneHttp(),
+  },
+})
+```
+:::
+
+## Return Type
+
+See [TanStack Query query docs](https://tanstack.com/query/v5/docs/framework/react/reference/useQuery) for more info hook return types.
+
+### data
+
+See [Wagmi Action `zone.getZoneInfo` Return Type](/tempo/actions/zone.getZoneInfo#return-type)
+
+## Parameters
+
+See [Wagmi Action `zone.getZoneInfo` Parameters](/tempo/actions/zone.getZoneInfo#parameters)
+
+### query
+
+See the [TanStack Query query docs](https://tanstack.com/query/v5/docs/framework/react/reference/useQuery) for more info hook parameters.
+
+## Action
+
+- [`zone.getZoneInfo`](/tempo/actions/zone.getZoneInfo)

@@ -1,28 +1,46 @@
-import { type MutateOptions, type MutationOptions } from '@tanstack/query-core'
-import {
-  type Abi,
-  type ContractFunctionArgs,
-  type ContractFunctionName,
-} from 'viem'
-
+import type { MutateOptions, MutationOptions } from '@tanstack/query-core'
+import type { Abi, ContractFunctionArgs, ContractFunctionName } from 'viem'
 import {
   type WriteContractErrorType,
   type WriteContractParameters,
   type WriteContractReturnType,
   writeContract,
 } from '../actions/writeContract.js'
-import { type Config } from '../createConfig.js'
-import { type Evaluate } from '../types/utils.js'
+import type { Config } from '../createConfig.js'
+import type { MutationParameter } from '../types/query.js'
+import type { Compute } from '../types/utils.js'
 
-export function writeContractMutationOptions<config extends Config>(
+export type WriteContractOptions<
+  config extends Config,
+  context = unknown,
+> = MutationParameter<
+  WriteContractData,
+  WriteContractErrorType,
+  WriteContractVariables<
+    Abi,
+    string,
+    readonly unknown[],
+    config,
+    config['chains'][number]['id']
+  >,
+  context
+>
+
+export function writeContractMutationOptions<config extends Config, context>(
   config: config,
-) {
+  options: WriteContractOptions<config, context> = {},
+): WriteContractMutationOptions<config> {
   return {
+    ...(options.mutation as any),
     mutationFn(variables) {
       return writeContract(config, variables)
     },
     mutationKey: ['writeContract'],
-  } as const satisfies MutationOptions<
+  }
+}
+
+export type WriteContractMutationOptions<config extends Config> =
+  MutationOptions<
     WriteContractData,
     WriteContractErrorType,
     WriteContractVariables<
@@ -33,9 +51,8 @@ export function writeContractMutationOptions<config extends Config>(
       config['chains'][number]['id']
     >
   >
-}
 
-export type WriteContractData = Evaluate<WriteContractReturnType>
+export type WriteContractData = Compute<WriteContractReturnType>
 
 export type WriteContractVariables<
   abi extends Abi | readonly unknown[],

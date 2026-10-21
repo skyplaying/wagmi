@@ -1,5 +1,5 @@
 import { abi, config, mainnet, optimism } from '@wagmi/test'
-import { http, type Address } from 'viem'
+import { type Address, http } from 'viem'
 import { celo } from 'viem/chains'
 import { assertType, expectTypeOf, test } from 'vitest'
 
@@ -21,7 +21,6 @@ test('default', async () => {
   expectTypeOf(result).toMatchTypeOf<{
     result: boolean
     request: {
-      __mode: 'prepared'
       chainId: 1
       abi: readonly [
         {
@@ -126,7 +125,6 @@ test('functionName', async () => {
   expectTypeOf(result).toMatchTypeOf<{
     result: boolean
     request: {
-      __mode: 'prepared'
       chainId: 1
       abi: readonly [
         {
@@ -200,12 +198,6 @@ test('chain formatters', async () => {
     expectTypeOf(response.request.feeCurrency).toEqualTypeOf<
       `0x${string}` | undefined
     >()
-    expectTypeOf(response.request.gatewayFee).toEqualTypeOf<
-      bigint | undefined
-    >()
-    expectTypeOf(response.request.gatewayFeeRecipient).toEqualTypeOf<
-      `0x${string}` | undefined
-    >()
   }
 
   const response2 = await simulateErc20(config, {
@@ -214,10 +206,6 @@ test('chain formatters', async () => {
     chainId: celo.id,
   })
   expectTypeOf(response2.request.feeCurrency).toEqualTypeOf<
-    `0x${string}` | undefined
-  >()
-  expectTypeOf(response2.request.gatewayFee).toEqualTypeOf<bigint | undefined>()
-  expectTypeOf(response2.request.gatewayFeeRecipient).toEqualTypeOf<
     `0x${string}` | undefined
   >()
 })

@@ -1,25 +1,24 @@
-import {
-  type Abi,
-  type Account,
-  type Address,
-  type Chain,
-  type ContractFunctionArgs,
-  type ContractFunctionName,
-  type WriteContractParameters as viem_WriteContractParameters,
+import type {
+  Abi,
+  Account,
+  Address,
+  Chain,
+  ContractFunctionArgs,
+  ContractFunctionName,
+  WriteContractParameters as viem_WriteContractParameters,
 } from 'viem'
 
-import { type Config } from '../../createConfig.js'
-import { type SelectChains } from '../../types/chain.js'
-import {
-  type ChainIdParameter,
-  type ConnectorParameter,
+import type { Config } from '../../createConfig.js'
+import type { SelectChains } from '../../types/chain.js'
+import type {
+  ChainIdParameter,
+  ConnectorParameter,
 } from '../../types/properties.js'
-import {
-  type Evaluate,
-  type UnionEvaluate,
-  type UnionOmit,
+import type {
+  Compute,
+  UnionCompute,
+  UnionStrictOmit,
 } from '../../types/utils.js'
-import { getAccount } from '../getAccount.js'
 import { getChainId } from '../getChainId.js'
 import {
   type WriteContractReturnType,
@@ -63,9 +62,9 @@ export type CreateWriteContractReturnType<
     | (functionName extends undefined ? never : 'functionName'),
 >(
   config: config,
-  parameters: UnionEvaluate<
+  parameters: UnionCompute<
     {
-      [key in keyof chains]: UnionOmit<
+      [key in keyof chains]: UnionStrictOmit<
         viem_WriteContractParameters<
           abi,
           name,
@@ -85,8 +84,8 @@ export type CreateWriteContractReturnType<
               | (chainId extends keyof address ? chainId : never)
               | undefined
           }
-        : Evaluate<ChainIdParameter<config, chainId>>) &
-      ConnectorParameter & { __mode?: 'prepared' }
+        : Compute<ChainIdParameter<config, chainId>>) &
+      ConnectorParameter
   >,
 ) => Promise<WriteContractReturnType>
 
@@ -104,25 +103,10 @@ export function createWriteContract<
 ): CreateWriteContractReturnType<abi, address, functionName> {
   if (c.address !== undefined && typeof c.address === 'object')
     return (config, parameters) => {
-      const configChainId = getChainId(config)
-      const account = getAccount(config)
-
-      let chainId
-      if (parameters.chainId) chainId = parameters.chainId
-      else if (
-        (parameters as unknown as { account: Address | Account | undefined })
-          .account &&
-        (parameters as unknown as { account: Address | Account | undefined })
-          .account === account.address
-      )
-        chainId = account.chainId
-      else if (
-        (parameters as unknown as { account: Address | Account | undefined })
-          .account === undefined
-      )
-        chainId = account.chainId
-      else chainId = configChainId
-
+      const chainId = (() => {
+        if (parameters.chainId) return parameters.chainId
+        return getChainId(config)
+      })()
       return writeContract(config, {
         ...(parameters as any),
         ...(c.functionName ? { functionName: c.functionName } : {}),

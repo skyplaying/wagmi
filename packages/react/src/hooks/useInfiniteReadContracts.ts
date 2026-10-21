@@ -1,29 +1,25 @@
 'use client'
-
 import type {
   Config,
   ReadContractsErrorType,
   ResolvedRegister,
 } from '@wagmi/core'
+import type { ConfigParameter } from '@wagmi/core/internal'
 import {
   type InfiniteReadContractsQueryFnData,
   type InfiniteReadContractsQueryKey,
   infiniteReadContractsQueryOptions,
+  structuralSharing,
 } from '@wagmi/core/query'
 import type { ContractFunctionParameters } from 'viem'
-
 import type {
   InfiniteReadContractsData,
   InfiniteReadContractsOptions,
 } from '../exports/query.js'
-import type {
-  ConfigParameter,
-  InfiniteQueryParameter,
-} from '../types/properties.js'
+import type { InfiniteQueryParameter } from '../types/properties.js'
 import {
   type UseInfiniteQueryParameters,
   type UseInfiniteQueryReturnType,
-  structuralSharing,
   useInfiniteQuery,
 } from '../utils/query.js'
 import { useChainId } from './useChainId.js'
@@ -71,7 +67,7 @@ export function useInfiniteReadContracts<
   const { contracts = [], query } = parameters
 
   const config = useConfig(parameters)
-  const chainId = useChainId()
+  const chainId = useChainId({ config })
 
   const options = infiniteReadContractsQueryOptions(config, {
     ...parameters,

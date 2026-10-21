@@ -1,7 +1,7 @@
 import { abi, config } from '@wagmi/test'
-import { http, type Address } from 'viem'
+import { type Address, http } from 'viem'
 import { celo, mainnet } from 'viem/chains'
-import { expectTypeOf, test } from 'vitest'
+import { assertType, expectTypeOf, test } from 'vitest'
 
 import { createConfig } from '../createConfig.js'
 import {
@@ -22,7 +22,6 @@ test('default', async () => {
   expectTypeOf(response).toMatchTypeOf<{
     result: boolean
     request: {
-      __mode: 'prepared'
       chainId: 1
       abi: readonly [
         {
@@ -58,8 +57,6 @@ test('chain formatters', async () => {
   expectTypeOf<Result>().toMatchTypeOf<{
     chainId?: typeof celo.id | typeof mainnet.id | undefined
     feeCurrency?: `0x${string}` | undefined
-    gatewayFee?: bigint | undefined
-    gatewayFeeRecipient?: `0x${string}` | undefined
   }>()
   const response = await simulateContract(config, {
     account: '0x',
@@ -68,19 +65,11 @@ test('chain formatters', async () => {
     functionName: 'transferFrom',
     args: ['0x', '0x', 123n],
     feeCurrency: '0x',
-    gatewayFee: 100n,
-    gatewayFeeRecipient: '0x',
   })
 
   if (response.chainId === celo.id) {
     expectTypeOf(response.chainId).toEqualTypeOf(celo.id)
     expectTypeOf(response.request.feeCurrency).toEqualTypeOf<
-      `0x${string}` | undefined
-    >()
-    expectTypeOf(response.request.gatewayFee).toEqualTypeOf<
-      bigint | undefined
-    >()
-    expectTypeOf(response.request.gatewayFeeRecipient).toEqualTypeOf<
       `0x${string}` | undefined
     >()
   }
@@ -96,8 +85,6 @@ test('chain formatters', async () => {
     functionName: 'approve' | 'transfer' | 'transferFrom'
     args: readonly [Address, Address, bigint]
     feeCurrency?: `0x${string}` | undefined
-    gatewayFee?: bigint | undefined
-    gatewayFeeRecipient?: `0x${string}` | undefined
   }>()
   const response2 = await simulateContract(config, {
     chainId: celo.id,
@@ -107,15 +94,9 @@ test('chain formatters', async () => {
     functionName: 'transferFrom',
     args: ['0x', '0x', 123n],
     feeCurrency: '0x',
-    gatewayFee: 100n,
-    gatewayFeeRecipient: '0x',
   })
   expectTypeOf(response2.chainId).toEqualTypeOf(celo.id)
   expectTypeOf(response2.request.feeCurrency).toEqualTypeOf<
-    `0x${string}` | undefined
-  >()
-  expectTypeOf(response2.request.gatewayFee).toEqualTypeOf<bigint | undefined>()
-  expectTypeOf(response2.request.gatewayFeeRecipient).toEqualTypeOf<
     `0x${string}` | undefined
   >()
 
@@ -132,8 +113,6 @@ test('chain formatters', async () => {
   }>()
   expectTypeOf<Result3>().not.toMatchTypeOf<{
     feeCurrency?: `0x${string}` | undefined
-    gatewayFee?: bigint | undefined
-    gatewayFeeRecipient?: `0x${string}` | undefined
   }>()
   simulateContract(config, {
     chainId: mainnet.id,
@@ -144,8 +123,6 @@ test('chain formatters', async () => {
     args: ['0x', '0x', 123n],
     // @ts-expect-error
     feeCurrency: '0x',
-    gatewayFee: 100n,
-    gatewayFeeRecipient: '0x',
   })
 })
 
@@ -155,10 +132,10 @@ test('SimulateContractParameters', () => {
     'transferFrom',
     [Address, Address, bigint],
     typeof config,
-    typeof config['chains'][number]['id']
+    (typeof config)['chains'][number]['id']
   >
   expectTypeOf<Result>().toMatchTypeOf<{
-    chainId?: typeof config['chains'][number]['id'] | undefined
+    chainId?: (typeof config)['chains'][number]['id'] | undefined
     functionName: 'approve' | 'transfer' | 'transferFrom'
     args: readonly [Address, Address, bigint]
   }>()
@@ -170,14 +147,50 @@ test('SimulateContractReturnType', () => {
     'transferFrom',
     [Address, Address, bigint],
     typeof config,
-    typeof config['chains'][number]['id']
+    (typeof config)['chains'][number]['id']
   >
   expectTypeOf<Result>().toMatchTypeOf<{
     result: boolean
     request: {
       functionName: 'transferFrom'
       args: readonly [Address, Address, bigint]
-      chainId: typeof config['chains'][number]['id']
+      chainId: (typeof config)['chains'][number]['id']
     }
   }>()
+})
+
+test('overloads', async () => {
+  const result1 = await simulateContract(config, {
+    address: '0x',
+    abi: abi.writeOverloads,
+    functionName: 'foo',
+  })
+  assertType<number>(result1.result)
+
+  const result2 = await simulateContract(config, {
+    address: '0x',
+    abi: abi.writeOverloads,
+    functionName: 'foo',
+    args: [],
+  })
+  assertType<number>(result2.result)
+
+  const result3 = await simulateContract(config, {
+    address: '0x',
+    abi: abi.writeOverloads,
+    functionName: 'foo',
+    args: ['0x'],
+  })
+  assertType<string>(result3.result)
+
+  const result4 = await simulateContract(config, {
+    address: '0x',
+    abi: abi.writeOverloads,
+    functionName: 'foo',
+    args: ['0x', '0x'],
+  })
+  assertType<{
+    foo: `0x${string}`
+    bar: `0x${string}`
+  }>(result4.result)
 })

@@ -1,17 +1,20 @@
+import { mkdir, rm } from 'node:fs/promises'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 
 import {
   address,
   apiKey,
-  handlers,
+  getHandlers,
   invalidApiKey,
+  proxyAddress,
   timeoutAddress,
   unverifiedContractAddress,
 } from '../../test/utils.js'
 import { etherscan } from './etherscan.js'
+import { getCacheDir } from './fetch.js'
 
-const server = setupServer(...handlers)
+const server = setupServer(...getHandlers())
 
 beforeAll(() => server.listen())
 afterEach(() => server.resetHandlers())
@@ -23,7 +26,7 @@ test('fetches ABI', async () => {
       apiKey,
       chainId: 1,
       contracts: [{ name: 'WagmiMintExample', address }],
-    }).contracts(),
+    }).contracts?.(),
   ).resolves.toMatchSnapshot()
 })
 
@@ -35,7 +38,7 @@ test('fetches ABI with multichain deployment', async () => {
       contracts: [
         { name: 'WagmiMintExample', address: { 1: address, 10: address } },
       ],
-    }).contracts(),
+    }).contracts?.(),
   ).resolves.toMatchSnapshot()
 })
 
@@ -47,9 +50,9 @@ test('fails to fetch for unverified contract', async () => {
       contracts: [
         { name: 'WagmiMintExample', address: unverifiedContractAddress },
       ],
-    }).contracts(),
+    }).contracts?.(),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
-    '"Contract source code not verified"',
+    '[Error: Contract source code not verified]',
   )
 })
 
@@ -60,9 +63,9 @@ test('missing address for chainId', async () => {
       chainId: 1,
       // @ts-expect-error `chainId` and `keyof typeof contracts[number].address` mismatch
       contracts: [{ name: 'WagmiMintExample', address: { 10: address } }],
-    }).contracts(),
+    }).contracts?.(),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
-    '"No address found for chainId \\"1\\". Make sure chainId \\"1\\" is set as an address."',
+    `[Error: No address found for chainId "1". Make sure chainId "1" is set as an address.]`,
   )
 })
 
@@ -72,6 +75,38 @@ test('invalid api key', async () => {
       apiKey: invalidApiKey,
       chainId: 1,
       contracts: [{ name: 'WagmiMintExample', address: timeoutAddress }],
-    }).contracts(),
-  ).rejects.toThrowErrorMatchingInlineSnapshot('"Invalid API Key"')
+    }).contracts?.(),
+  ).rejects.toThrowErrorMatchingInlineSnapshot('[Error: Invalid API Key]')
+})
+
+test('tryFetchProxyImplementation: fetches ABI', async () => {
+  const cacheDir = getCacheDir()
+  await mkdir(cacheDir, { recursive: true })
+
+  await expect(
+    etherscan({
+      apiKey,
+      chainId: 1,
+      contracts: [{ name: 'WagmiMintExample', address }],
+      tryFetchProxyImplementation: true,
+    }).contracts?.(),
+  ).resolves.toMatchSnapshot()
+
+  await rm(cacheDir, { recursive: true })
+})
+
+test('tryFetchProxyImplementation: fetches implementation ABI', async () => {
+  const cacheDir = getCacheDir()
+  await mkdir(cacheDir, { recursive: true })
+
+  await expect(
+    etherscan({
+      apiKey,
+      chainId: 1,
+      contracts: [{ name: 'FiatToken', address: proxyAddress }],
+      tryFetchProxyImplementation: true,
+    }).contracts?.(),
+  ).resolves.toMatchSnapshot()
+
+  await rm(cacheDir, { recursive: true })
 })

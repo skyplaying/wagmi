@@ -1,4 +1,4 @@
-import { http, createConfig, webSocket } from '@wagmi/core'
+import { createConfig, http, webSocket } from '@wagmi/core'
 import { mainnet, optimism } from '@wagmi/core/chains'
 import { expectTypeOf, test } from 'vitest'
 
@@ -8,6 +8,7 @@ test('select data', () => {
   const result = useBlockNumber({
     query: {
       select(data) {
+        expectTypeOf(data).toEqualTypeOf<bigint>()
         return data?.toString()
       },
     },

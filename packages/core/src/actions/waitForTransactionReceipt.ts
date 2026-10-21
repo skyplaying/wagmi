@@ -1,33 +1,35 @@
-import { type Chain } from 'viem'
-import { hexToString } from 'viem'
+import type { Chain } from 'viem'
+import { hexToString, withTimeout } from 'viem'
 import {
+  call,
+  getTransaction,
   type WaitForTransactionReceiptErrorType as viem_WaitForTransactionReceiptErrorType,
   type WaitForTransactionReceiptParameters as viem_WaitForTransactionReceiptParameters,
   type WaitForTransactionReceiptReturnType as viem_WaitForTransactionReceiptReturnType,
-  call,
-  getTransaction,
   waitForTransactionReceipt as viem_waitForTransactionReceipt,
 } from 'viem/actions'
 
-import { type Config } from '../createConfig.js'
-import { type SelectChains } from '../types/chain.js'
-import { type ChainIdParameter } from '../types/properties.js'
-import { type Evaluate, type IsNarrowable } from '../types/utils.js'
+import type { Config } from '../createConfig.js'
+import type { SelectChains } from '../types/chain.js'
+import type { ChainIdParameter } from '../types/properties.js'
+import type { Compute, IsNarrowable } from '../types/utils.js'
 import { getAction } from '../utils/getAction.js'
 
 export type WaitForTransactionReceiptParameters<
   config extends Config = Config,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
-> = Evaluate<
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
+> = Compute<
   viem_WaitForTransactionReceiptParameters & ChainIdParameter<config, chainId>
 >
 
 export type WaitForTransactionReceiptReturnType<
   config extends Config = Config,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   ///
   chains extends readonly Chain[] = SelectChains<config, chainId>,
-> = Evaluate<
+> = Compute<
   {
     [key in keyof chains]: viem_WaitForTransactionReceiptReturnType<
       IsNarrowable<chains[key], Chain> extends true ? chains[key] : undefined
@@ -56,22 +58,36 @@ export async function waitForTransactionReceipt<
   const receipt = await action({ ...rest, timeout })
 
   if (receipt.status === 'reverted') {
-    const action_getTransaction = getAction(
-      client,
-      getTransaction,
-      'getTransaction',
+    throw await withTimeout(
+      async () => {
+        const action_getTransaction = getAction(
+          client,
+          getTransaction,
+          'getTransaction',
+        )
+        const { from: account, ...txn } = await action_getTransaction({
+          hash: receipt.transactionHash,
+        })
+        const action_call = getAction(client, call, 'call')
+        const code = await action_call({
+          ...(txn as any),
+          account,
+          data: txn.input,
+          gasPrice: txn.type !== 'eip1559' ? txn.gasPrice : undefined,
+          maxFeePerGas: txn.type === 'eip1559' ? txn.maxFeePerGas : undefined,
+          maxPriorityFeePerGas:
+            txn.type === 'eip1559' ? txn.maxPriorityFeePerGas : undefined,
+        })
+        const reason = code?.data
+          ? hexToString(`0x${code.data.substring(138)}`)
+          : 'unknown reason'
+        return new Error(reason)
+      },
+      {
+        timeout: timeout > 0 ? Math.min(timeout, 10_000) : 10_000,
+        errorInstance: new Error('unknown reason'),
+      },
     )
-    const txn = await action_getTransaction({ hash: receipt.transactionHash })
-    const action_call = getAction(client, call, 'call')
-    const code = (await action_call({
-      ...(txn as any),
-      gasPrice: txn.type !== 'eip1559' ? txn.gasPrice : undefined,
-      maxFeePerGas: txn.type === 'eip1559' ? txn.maxFeePerGas : undefined,
-      maxPriorityFeePerGas:
-        txn.type === 'eip1559' ? txn.maxPriorityFeePerGas : undefined,
-    })) as unknown as string
-    const reason = hexToString(`0x${code.substring(138)}`)
-    throw new Error(reason)
   }
 
   return {

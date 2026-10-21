@@ -1,8 +1,7 @@
 import { abi } from '@wagmi/test'
-import { type Address } from 'viem'
+import type { Address } from 'viem'
 import { assertType, expectTypeOf, test } from 'vitest'
 
-import {} from '../types/properties.js'
 import {
   type UseReadContractParameters,
   type UseReadContractReturnType,
@@ -67,7 +66,6 @@ test('overloads', () => {
     functionName: 'foo',
     args: ['0x'],
   })
-  // @ts-ignore – TODO: Fix https://github.com/wevm/viem/issues/1916
   assertType<string | undefined>(result3.data)
 
   const result4 = useReadContract({
@@ -82,6 +80,15 @@ test('overloads', () => {
         bar: `0x${string}`
       }
     | undefined
-    // @ts-ignore – TODO: Fix https://github.com/wevm/viem/issues/1916
   >(result4.data)
+})
+
+test('deployless read (bytecode)', () => {
+  const result = useReadContract({
+    code: '0x',
+    abi: abi.erc20,
+    functionName: 'balanceOf',
+    args: ['0x'],
+  })
+  expectTypeOf(result.data).toEqualTypeOf<bigint | undefined>()
 })

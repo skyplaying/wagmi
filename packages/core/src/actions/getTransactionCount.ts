@@ -5,13 +5,13 @@ import {
   getTransactionCount as viem_getTransactionCount,
 } from 'viem/actions'
 
-import { type Config } from '../createConfig.js'
-import { type ChainIdParameter } from '../types/properties.js'
-import { type Evaluate } from '../types/utils.js'
+import type { Config } from '../createConfig.js'
+import type { ChainIdParameter } from '../types/properties.js'
+import type { Compute } from '../types/utils.js'
 import { getAction } from '../utils/getAction.js'
 
 export type GetTransactionCountParameters<config extends Config = Config> =
-  Evaluate<ChainIdParameter<config> & viem_GetTransactionCountParameters>
+  Compute<ChainIdParameter<config> & viem_GetTransactionCountParameters>
 
 export type GetTransactionCountReturnType = viem_GetTransactionCountReturnType
 
@@ -30,5 +30,9 @@ export async function getTransactionCount<config extends Config>(
     viem_getTransactionCount,
     'getTransactionCount',
   )
-  return action(blockNumber ? { address, blockNumber } : { address, blockTag })
+  return action(
+    blockNumber !== undefined
+      ? { address, blockNumber }
+      : { address, blockTag },
+  )
 }

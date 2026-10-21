@@ -1,26 +1,18 @@
 'use client'
-
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  type Config,
-  type GetBlockErrorType,
-  type ResolvedRegister,
-} from '@wagmi/core'
-import {
-  type Evaluate,
-  type UnionEvaluate,
-  type UnionOmit,
+import type { Config, GetBlockErrorType, ResolvedRegister } from '@wagmi/core'
+import type {
+  Compute,
+  ConfigParameter,
+  UnionCompute,
+  UnionStrictOmit,
 } from '@wagmi/core/internal'
 import {
   type GetBlockData,
   type GetBlockOptions,
-  type GetBlockQueryFnData,
-  type GetBlockQueryKey,
   getBlockQueryOptions,
 } from '@wagmi/core/query'
 import type { BlockTag } from 'viem'
-
-import type { ConfigParameter, QueryParameter } from '../types/properties.js'
 import { type UseQueryReturnType, useQuery } from '../utils/query.js'
 import { useChainId } from './useChainId.js'
 import { useConfig } from './useConfig.js'
@@ -33,21 +25,16 @@ export type UseBlockParameters<
   includeTransactions extends boolean = false,
   blockTag extends BlockTag = 'latest',
   config extends Config = Config,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   selectData = GetBlockData<includeTransactions, blockTag, config, chainId>,
-> = Evaluate<
-  GetBlockOptions<includeTransactions, blockTag, config, chainId> &
-    ConfigParameter<config> &
-    QueryParameter<
-      GetBlockQueryFnData<includeTransactions, blockTag, config, chainId>,
-      GetBlockErrorType,
-      selectData,
-      GetBlockQueryKey<includeTransactions, blockTag, config, chainId>
-    > & {
+> = Compute<
+  GetBlockOptions<includeTransactions, blockTag, config, chainId, selectData> &
+    ConfigParameter<config> & {
       watch?:
         | boolean
-        | UnionEvaluate<
-            UnionOmit<
+        | UnionCompute<
+            UnionStrictOmit<
               UseWatchBlocksParameters<
                 includeTransactions,
                 blockTag,
@@ -65,7 +52,8 @@ export type UseBlockReturnType<
   includeTransactions extends boolean = false,
   blockTag extends BlockTag = 'latest',
   config extends Config = Config,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   selectData = GetBlockData<includeTransactions, blockTag, config, chainId>,
 > = UseQueryReturnType<selectData, GetBlockErrorType>
 
@@ -74,7 +62,8 @@ export function useBlock<
   includeTransactions extends boolean = false,
   blockTag extends BlockTag = 'latest',
   config extends Config = ResolvedRegister['config'],
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   selectData = GetBlockData<includeTransactions, blockTag, config, chainId>,
 >(
   parameters: UseBlockParameters<
@@ -91,42 +80,30 @@ export function useBlock<
   chainId,
   selectData
 > {
-  const { query = {}, watch } = parameters
-
   const config = useConfig(parameters)
-  const queryClient = useQueryClient()
-  const configChainId = useChainId()
-  const chainId = parameters.chainId ?? configChainId
-
+  const chainId = useChainId({ config })
   const options = getBlockQueryOptions(config, {
     ...parameters,
-    chainId,
+    chainId: parameters.chainId ?? chainId,
   })
-  const enabled = Boolean(query.enabled ?? true)
-
+  const queryClient = useQueryClient()
   useWatchBlocks({
     ...({
       config: parameters.config,
       chainId: parameters.chainId!,
-      ...(typeof watch === 'object' ? watch : {}),
+      blockTag: parameters.blockTag,
+      includeTransactions: parameters.includeTransactions,
+      ...(typeof parameters.watch === 'object' ? parameters.watch : {}),
     } as UseWatchBlocksParameters),
     enabled: Boolean(
-      enabled && (typeof watch === 'object' ? watch.enabled : watch),
+      (options.enabled ?? true) &&
+        (typeof parameters.watch === 'object'
+          ? parameters.watch.enabled
+          : parameters.watch),
     ),
     onBlock(block) {
       queryClient.setQueryData(options.queryKey, block)
     },
   })
-
-  return useQuery({
-    ...(query as any),
-    ...options,
-    enabled,
-  }) as UseBlockReturnType<
-    includeTransactions,
-    blockTag,
-    config,
-    chainId,
-    selectData
-  >
+  return useQuery(options) as any
 }

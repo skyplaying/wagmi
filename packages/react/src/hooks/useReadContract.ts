@@ -1,30 +1,17 @@
 'use client'
-
-import {
-  type Config,
-  type ReadContractErrorType,
-  type ResolvedRegister,
+import type {
+  Config,
+  ReadContractErrorType,
+  ResolvedRegister,
 } from '@wagmi/core'
-import { type UnionEvaluate } from '@wagmi/core/internal'
+import type { ConfigParameter, UnionCompute } from '@wagmi/core/internal'
 import {
   type ReadContractData,
   type ReadContractOptions,
-  type ReadContractQueryFnData,
-  type ReadContractQueryKey,
   readContractQueryOptions,
 } from '@wagmi/core/query'
-import {
-  type Abi,
-  type ContractFunctionArgs,
-  type ContractFunctionName,
-} from 'viem'
-
-import type { ConfigParameter, QueryParameter } from '../types/properties.js'
-import {
-  type UseQueryReturnType,
-  structuralSharing,
-  useQuery,
-} from '../utils/query.js'
+import type { Abi, ContractFunctionArgs, ContractFunctionName } from 'viem'
+import { type UseQueryReturnType, useQuery } from '../utils/query.js'
 import { useChainId } from './useChainId.js'
 import { useConfig } from './useConfig.js'
 
@@ -41,15 +28,9 @@ export type UseReadContractParameters<
   > = ContractFunctionArgs<abi, 'pure' | 'view', functionName>,
   config extends Config = Config,
   selectData = ReadContractData<abi, functionName, args>,
-> = UnionEvaluate<
-  ReadContractOptions<abi, functionName, args, config> &
-    ConfigParameter<config> &
-    QueryParameter<
-      ReadContractQueryFnData<abi, functionName, args>,
-      ReadContractErrorType,
-      selectData,
-      ReadContractQueryKey<abi, functionName, args, config>
-    >
+> = UnionCompute<
+  ReadContractOptions<abi, functionName, args, config, selectData> &
+    ConfigParameter<config>
 >
 
 export type UseReadContractReturnType<
@@ -70,7 +51,7 @@ export type UseReadContractReturnType<
 export function useReadContract<
   const abi extends Abi | readonly unknown[],
   functionName extends ContractFunctionName<abi, 'pure' | 'view'>,
-  args extends ContractFunctionArgs<abi, 'pure' | 'view', functionName>,
+  const args extends ContractFunctionArgs<abi, 'pure' | 'view', functionName>,
   config extends Config = ResolvedRegister['config'],
   selectData = ReadContractData<abi, functionName, args>,
 >(
@@ -82,23 +63,11 @@ export function useReadContract<
     selectData
   > = {} as any,
 ): UseReadContractReturnType<abi, functionName, args, selectData> {
-  const { abi, address, functionName, query = {} } = parameters
-
   const config = useConfig(parameters)
-  const chainId = useChainId()
-
-  const options = readContractQueryOptions<config, abi, functionName, args>(
-    config,
-    { ...(parameters as any), chainId: parameters.chainId ?? chainId },
-  )
-  const enabled = Boolean(
-    address && abi && functionName && (query.enabled ?? true),
-  )
-
-  return useQuery({
-    ...query,
-    ...options,
-    enabled,
-    structuralSharing: query.structuralSharing ?? structuralSharing,
+  const chainId = useChainId({ config })
+  const options = readContractQueryOptions(config, {
+    ...(parameters as any),
+    chainId: parameters.chainId ?? chainId,
   })
+  return useQuery(options) as any
 }

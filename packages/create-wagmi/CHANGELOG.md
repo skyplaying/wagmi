@@ -1,5 +1,59 @@
 # create-wagmi
 
+## 2.0.19
+
+### Patch Changes
+
+- Fixed Vite React template build by removing global Buffer patch ([#4900](https://github.com/wevm/wagmi/pull/4900))
+
+## 2.0.18
+
+### Patch Changes
+
+- Bumped next.js template dependencies ([`d717d86`](https://github.com/wevm/wagmi/commit/d717d86962a6335d9c23e7fe530f17bae16f4e10))
+
+## 2.0.17
+
+### Patch Changes
+
+- Bumped next.js template dependencies ([`99c7e2f`](https://github.com/wevm/wagmi/commit/99c7e2f096ef3fc277b3f517c0ddd983bd920880))
+
+## 2.0.16
+
+### Patch Changes
+
+- Bumped Wagmi version ([`0112d33`](https://github.com/wevm/wagmi/commit/0112d33a20340f37b3b19538f55e1f32cb24c5f1))
+
+## 2.0.15
+
+### Patch Changes
+
+- [#4673](https://github.com/wevm/wagmi/pull/4673) [`c49866724e182920e369193201d1308259c3968e`](https://github.com/wevm/wagmi/commit/c49866724e182920e369193201d1308259c3968e) Thanks [@imaksp](https://github.com/imaksp)! - Fixed Next.js template type error
+
+## 2.0.14
+
+### Patch Changes
+
+- [#4450](https://github.com/wevm/wagmi/pull/4450) [`7b9a6bb35881b657a00bdd7ccd7edea32660f5bf`](https://github.com/wevm/wagmi/commit/7b9a6bb35881b657a00bdd7ccd7edea32660f5bf) Thanks [@tmm](https://github.com/tmm)! - Removed internal usage of `fs-extra`.
+
+## 2.0.13
+
+### Patch Changes
+
+- [#4060](https://github.com/wevm/wagmi/pull/4060) [`95965c1f19d480b97f2b297a077a9e607dee32ad`](https://github.com/wevm/wagmi/commit/95965c1f19d480b97f2b297a077a9e607dee32ad) Thanks [@dalechyn](https://github.com/dalechyn)! - Bumped Tanstack Query dependencies to fix typing issues between exported Wagmi query options and TanStack Query suspense query methods (due to [`direction` property in `QueryFunctionContext` being deprecated](https://github.com/TanStack/query/pull/7410)).
+
+## 2.0.12
+
+### Patch Changes
+
+- [`c00303d0c5909680b3124f92c0a2d2f31ea30405`](https://github.com/wevm/wagmi/commit/c00303d0c5909680b3124f92c0a2d2f31ea30405) Thanks [@tmm](https://github.com/tmm)! - Bumped Next.js version
+
+## 2.0.11
+
+### Patch Changes
+
+- [#3871](https://github.com/wevm/wagmi/pull/3871) [`0e6bd286`](https://github.com/wevm/wagmi/commit/0e6bd286ca2572d2bfbe206db460528b7c2ebc63) Thanks [@jxom](https://github.com/jxom)! - Added `.npmrc` with `legacy-peer-deps = true` to templates.
+
 ## 2.0.10
 
 ### Patch Changes

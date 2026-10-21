@@ -1,7 +1,7 @@
 {
   "name": "@wagmi/cli",
   "description": "Manage and generate code from Ethereum ABIs",
-  "version": "2.1.4",
+  "version": "2.10.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -9,12 +9,12 @@
     "directory": "packages/cli"
   },
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:esm+types",
+    "build": "pnpm run build:esm+types",
     "build:esm+types": "tsc --project tsconfig.build.json --outDir ./dist/esm --declaration --declarationMap --declarationDir ./dist/types",
+    "check:types": "tsgo --noEmit",
     "clean": "rm -rf dist tsconfig.tsbuildinfo config plugins",
     "dev": "bun src/cli.ts",
-    "test:build": "publint --strict",
-    "typecheck": "tsc --noEmit"
+    "test:build": "publint --strict && attw --pack --ignore-rules cjs-resolves-to-esm"
   },
   "files": [
     "dist/**",
@@ -59,7 +59,7 @@
     }
   },
   "peerDependencies": {
-    "typescript": ">=5.0.4"
+    "typescript": ">=5.9.3"
   },
   "peerDependenciesMeta": {
     "typescript": {
@@ -67,31 +67,30 @@
     }
   },
   "dependencies": {
-    "abitype": "^0.9.8",
-    "bundle-require": "^4.0.2",
+    "abitype": "^1.1.1",
+    "bundle-require": "^5.1.0",
     "cac": "^6.7.14",
-    "change-case": "^4.1.2",
-    "chokidar": "^3.5.3",
+    "change-case": "^5.4.4",
+    "chokidar": "4.0.1",
     "dedent": "^0.7.0",
     "dotenv": "^16.3.1",
     "dotenv-expand": "^10.0.0",
-    "esbuild": "^0.19.0",
-    "execa": "^8.0.1",
-    "find-up": "^6.3.0",
-    "fs-extra": "^11.1.1",
-    "globby": "^13.2.2",
-    "ora": "^6.3.1",
-    "pathe": "^1.1.1",
+    "esbuild": "~0.28.1",
+    "escalade": "3.2.0",
+    "fdir": "^6.1.1",
+    "nanospinner": "1.2.2",
+    "pathe": "^1.1.2",
     "picocolors": "^1.0.0",
+    "picomatch": "^4.0.4",
     "prettier": "^3.0.3",
-    "viem": "2.*",
-    "zod": "^3.22.2"
+    "viem": "2.x",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@types/dedent": "^0.7.0",
-    "@types/fs-extra": "^11.0.2",
-    "fixturez": "^1.1.0",
-    "msw": "^2.0.6"
+    "@types/dedent": "^0.7.2",
+    "@types/node": "^24.5.1",
+    "fs-fixture": "^2.13.0",
+    "msw": "^2.4.9"
   },
   "contributors": [
     "awkweb.eth <t@wevm.dev>",

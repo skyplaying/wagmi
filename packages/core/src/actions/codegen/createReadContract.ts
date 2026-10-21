@@ -1,13 +1,12 @@
-import {
-  type Abi,
-  type Address,
-  type ContractFunctionArgs,
-  type ContractFunctionName,
+import type {
+  Abi,
+  Address,
+  ContractFunctionArgs,
+  ContractFunctionName,
 } from 'viem'
 
-import { type Config } from '../../createConfig.js'
-import { type UnionEvaluate, type UnionOmit } from '../../types/utils.js'
-import { getAccount } from '../getAccount.js'
+import type { Config } from '../../createConfig.js'
+import type { UnionCompute, UnionStrictOmit } from '../../types/utils.js'
 import { getChainId } from '../getChainId.js'
 import {
   type ReadContractParameters,
@@ -50,8 +49,8 @@ export type CreateReadContractReturnType<
   args extends ContractFunctionArgs<abi, stateMutability, name>,
 >(
   config: config,
-  parameters: UnionEvaluate<
-    UnionOmit<
+  parameters: UnionCompute<
+    UnionStrictOmit<
       ReadContractParameters<abi, name, args, config>,
       omittedProperties
     >
@@ -76,11 +75,8 @@ export function createReadContract<
   if (c.address !== undefined && typeof c.address === 'object')
     return (config, parameters) => {
       const configChainId = getChainId(config)
-      const account = getAccount(config)
       const chainId =
-        (parameters as { chainId?: number })?.chainId ??
-        account.chainId ??
-        configChainId
+        (parameters as { chainId?: number })?.chainId ?? configChainId
       return readContract(config, {
         ...(parameters as any),
         ...(c.functionName ? { functionName: c.functionName } : {}),

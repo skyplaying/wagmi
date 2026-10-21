@@ -1,6 +1,7 @@
 import { abi, config } from '@wagmi/test'
-import { http, type Address, parseAbi } from 'viem'
-import { celo, mainnet } from 'viem/chains'
+import { type Address, http, parseAbi } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
+import { celo, mainnet, tempoLocalnet } from 'viem/chains'
 import { expectTypeOf, test } from 'vitest'
 
 import { createConfig } from '../createConfig.js'
@@ -28,7 +29,6 @@ test('simulateContract', async () => {
   })
   await writeContract(config, request)
   await writeContract(config, {
-    __mode: 'prepared',
     address: '0x',
     abi: abi.erc20,
     functionName: 'transferFrom',
@@ -51,8 +51,6 @@ test('chain formatters', () => {
   expectTypeOf<Result>().toMatchTypeOf<{
     chainId?: typeof celo.id | typeof mainnet.id | undefined
     feeCurrency?: `0x${string}` | undefined
-    gatewayFee?: bigint | undefined
-    gatewayFeeRecipient?: `0x${string}` | undefined
   }>()
   writeContract(config, {
     address: '0x',
@@ -60,8 +58,6 @@ test('chain formatters', () => {
     functionName: 'transferFrom',
     args: ['0x', '0x', 123n],
     feeCurrency: '0x',
-    gatewayFee: 100n,
-    gatewayFeeRecipient: '0x',
   })
 
   type Result2 = WriteContractParameters<
@@ -75,8 +71,6 @@ test('chain formatters', () => {
     functionName: 'approve' | 'transfer' | 'transferFrom'
     args: readonly [Address, Address, bigint]
     feeCurrency?: `0x${string}` | undefined
-    gatewayFee?: bigint | undefined
-    gatewayFeeRecipient?: `0x${string}` | undefined
   }>()
   writeContract(config, {
     chainId: celo.id,
@@ -85,8 +79,6 @@ test('chain formatters', () => {
     functionName: 'transferFrom',
     args: ['0x', '0x', 123n],
     feeCurrency: '0x',
-    gatewayFee: 100n,
-    gatewayFeeRecipient: '0x',
   })
 
   type Result3 = WriteContractParameters<
@@ -102,8 +94,6 @@ test('chain formatters', () => {
   }>()
   expectTypeOf<Result3>().not.toMatchTypeOf<{
     feeCurrency?: `0x${string}` | undefined
-    gatewayFee?: bigint | undefined
-    gatewayFeeRecipient?: `0x${string}` | undefined
   }>()
   writeContract(config, {
     chainId: mainnet.id,
@@ -113,9 +103,57 @@ test('chain formatters', () => {
     args: ['0x', '0x', 123n],
     // @ts-expect-error
     feeCurrency: '0x',
-    gatewayFee: 100n,
-    gatewayFeeRecipient: '0x',
   })
+})
+
+test('tempo feePayer', () => {
+  const feePayer = privateKeyToAccount(
+    '0x0123456789012345678901234567890123456789012345678901234567890123',
+  )
+
+  const config = createConfig({
+    chains: [mainnet, tempoLocalnet],
+    transports: { [mainnet.id]: http(), [tempoLocalnet.id]: http() },
+  })
+
+  writeContract(config, {
+    chainId: tempoLocalnet.id,
+    address: '0x',
+    abi: abi.erc20,
+    functionName: 'transferFrom',
+    args: ['0x', '0x', 123n],
+    feePayer: true,
+  })
+
+  writeContract(config, {
+    chainId: tempoLocalnet.id,
+    address: '0x',
+    abi: abi.erc20,
+    functionName: 'transferFrom',
+    args: ['0x', '0x', 123n],
+    feePayer,
+  })
+
+  writeContract(config, {
+    chainId: mainnet.id,
+    address: '0x',
+    abi: abi.erc20,
+    functionName: 'transferFrom',
+    args: ['0x', '0x', 123n],
+    // @ts-expect-error
+    feePayer: true,
+  })
+
+  type Result = WriteContractParameters<
+    typeof abi.erc20,
+    'transferFrom',
+    [Address, Address, bigint],
+    typeof config,
+    typeof mainnet.id
+  >
+  expectTypeOf<Result>().not.toMatchTypeOf<{
+    feePayer?: true | typeof feePayer | undefined
+  }>()
 })
 
 test('overloads', async () => {

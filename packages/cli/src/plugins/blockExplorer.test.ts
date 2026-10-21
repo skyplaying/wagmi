@@ -4,13 +4,13 @@ import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import {
   address,
   apiKey,
-  baseUrl,
-  handlers,
+  getHandlers,
   unverifiedContractAddress,
 } from '../../test/utils.js'
 import { blockExplorer } from './blockExplorer.js'
 
-const server = setupServer(...handlers)
+const baseUrl = 'https://api.etherscan.io/v2/api'
+const server = setupServer(...getHandlers(baseUrl))
 
 beforeAll(() => server.listen())
 afterEach(() => server.resetHandlers())
@@ -34,7 +34,7 @@ test('fetches ABI with multichain deployment', async () => {
       contracts: [
         { name: 'WagmiMintExample', address: { 1: address, 10: address } },
       ],
-    }).contracts(),
+    }).contracts?.(),
   ).resolves.toMatchSnapshot()
 })
 
@@ -46,8 +46,8 @@ test('fails to fetch for unverified contract', async () => {
       contracts: [
         { name: 'WagmiMintExample', address: unverifiedContractAddress },
       ],
-    }).contracts(),
+    }).contracts?.(),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
-    '"Contract source code not verified"',
+    '[Error: Contract source code not verified]',
   )
 })

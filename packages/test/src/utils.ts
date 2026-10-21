@@ -1,4 +1,8 @@
-import { pool } from './constants.js'
+const pool =
+  (typeof process !== 'undefined' &&
+    Number(process.env.VITEST_POOL_ID ?? 1) +
+      Math.floor(Math.random() * 10_000)) ||
+  1 + Math.floor(Math.random() * 10_000)
 
 export function getRpcUrls({ port }: { port: number }) {
   return {

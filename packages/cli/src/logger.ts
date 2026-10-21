@@ -1,5 +1,5 @@
-import { format as utilFormat } from 'util'
-import ora from 'ora'
+import { format as utilFormat } from 'node:util'
+import { createSpinner } from 'nanospinner'
 import pc from 'picocolors'
 
 function format(args: any[]) {
@@ -13,6 +13,7 @@ export function success(...args: any[]) {
 }
 
 export function info(...args: any[]) {
+  // biome-ignore lint/suspicious/noConsole: logger
   console.info(pc.blue(format(args)))
 }
 
@@ -21,16 +22,17 @@ export function log(...args: any[]) {
 }
 
 export function warn(...args: any[]) {
+  // biome-ignore lint/suspicious/noConsole: logger
   console.warn(pc.yellow(format(args)))
 }
 
 export function error(...args: any[]) {
+  // biome-ignore lint/suspicious/noConsole: logger
   console.error(pc.red(format(args)))
 }
 
-export function spinner() {
-  return ora({
+export function spinner(text: string) {
+  return createSpinner(text, {
     color: 'yellow',
-    spinner: 'dots',
   })
 }

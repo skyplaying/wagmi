@@ -1,5 +1,5 @@
-import { type PartializedState } from './createConfig.js'
-import { type Evaluate } from './types/utils.js'
+import type { PartializedState } from './createConfig.js'
+import type { Compute } from './types/utils.js'
 import { deserialize as deserialize_ } from './utils/deserialize.js'
 import { serialize as serialize_ } from './utils/serialize.js'
 
@@ -10,7 +10,7 @@ export type StorageItemMap = {
 }
 
 export type Storage<
-  itemMap extends Record<string, unknown> = {},
+  itemMap extends Record<string, unknown> = Record<string, unknown>,
   ///
   storageItemMap extends StorageItemMap = StorageItemMap & itemMap,
 > = {
@@ -41,16 +41,16 @@ export type BaseStorage = {
 }
 
 export type CreateStorageParameters = {
-  deserialize?: (<T>(value: string) => T) | undefined
+  deserialize?: (<type>(value: string) => type | unknown) | undefined
   key?: string | undefined
-  serialize?: (<T>(value: T) => string) | undefined
-  storage?: Evaluate<BaseStorage> | undefined
+  serialize?: (<type>(value: type | any) => string) | undefined
+  storage?: Compute<BaseStorage> | undefined
 }
 
 export function createStorage<
-  itemMap extends Record<string, unknown> = {},
+  itemMap extends Record<string, unknown> = Record<string, unknown>,
   storageItemMap extends StorageItemMap = StorageItemMap & itemMap,
->(parameters: CreateStorageParameters): Evaluate<Storage<storageItemMap>> {
+>(parameters: CreateStorageParameters): Compute<Storage<storageItemMap>> {
   const {
     deserialize = deserialize_,
     key: prefix = 'wagmi',
@@ -88,3 +88,26 @@ export const noopStorage = {
   setItem: () => {},
   removeItem: () => {},
 } satisfies BaseStorage
+
+export function getDefaultStorage() {
+  const storage = (() => {
+    // biome-ignore lint/complexity/useOptionalChain: _
+    if (typeof window !== 'undefined' && window.localStorage)
+      return window.localStorage
+    return noopStorage
+  })()
+  return {
+    getItem(key) {
+      return storage.getItem(key)
+    },
+    removeItem(key) {
+      storage.removeItem(key)
+    },
+    setItem(key, value) {
+      try {
+        storage.setItem(key, value)
+        // silence errors by default (QuotaExceededError, SecurityError, etc.)
+      } catch {}
+    },
+  } satisfies BaseStorage
+}

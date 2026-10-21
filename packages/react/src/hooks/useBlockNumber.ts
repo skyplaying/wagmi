@@ -1,25 +1,21 @@
 'use client'
-
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  type Config,
-  type GetBlockNumberErrorType,
-  type ResolvedRegister,
+import type {
+  Config,
+  GetBlockNumberErrorType,
+  ResolvedRegister,
 } from '@wagmi/core'
-import {
-  type Evaluate,
-  type UnionEvaluate,
-  type UnionOmit,
+import type {
+  Compute,
+  ConfigParameter,
+  UnionCompute,
+  UnionStrictOmit,
 } from '@wagmi/core/internal'
 import {
   type GetBlockNumberData,
   type GetBlockNumberOptions,
-  type GetBlockNumberQueryFnData,
-  type GetBlockNumberQueryKey,
   getBlockNumberQueryOptions,
 } from '@wagmi/core/query'
-
-import type { ConfigParameter, QueryParameter } from '../types/properties.js'
 import { type UseQueryReturnType, useQuery } from '../utils/query.js'
 import { useChainId } from './useChainId.js'
 import { useConfig } from './useConfig.js'
@@ -30,21 +26,16 @@ import {
 
 export type UseBlockNumberParameters<
   config extends Config = Config,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   selectData = GetBlockNumberData,
-> = Evaluate<
-  GetBlockNumberOptions<config, chainId> &
-    ConfigParameter<config> &
-    QueryParameter<
-      GetBlockNumberQueryFnData,
-      GetBlockNumberErrorType,
-      selectData,
-      GetBlockNumberQueryKey<config, chainId>
-    > & {
+> = Compute<
+  GetBlockNumberOptions<config, chainId, selectData> &
+    ConfigParameter<config> & {
       watch?:
         | boolean
-        | UnionEvaluate<
-            UnionOmit<
+        | UnionCompute<
+            UnionStrictOmit<
               UseWatchBlockNumberParameters<config, chainId>,
               'chainId' | 'config' | 'onBlockNumber' | 'onError'
             >
@@ -59,37 +50,34 @@ export type UseBlockNumberReturnType<selectData = GetBlockNumberData> =
 /** https://wagmi.sh/react/api/hooks/useBlockNumber */
 export function useBlockNumber<
   config extends Config = ResolvedRegister['config'],
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   selectData = GetBlockNumberData,
 >(
   parameters: UseBlockNumberParameters<config, chainId, selectData> = {},
 ): UseBlockNumberReturnType<selectData> {
-  const { query = {}, watch } = parameters
-
   const config = useConfig(parameters)
-  const queryClient = useQueryClient()
-  const configChainId = useChainId()
-  const chainId = parameters.chainId ?? configChainId
-
+  const chainId = useChainId({ config })
   const options = getBlockNumberQueryOptions(config, {
     ...parameters,
-    chainId,
+    chainId: parameters.chainId ?? chainId,
   })
-
+  const queryClient = useQueryClient()
   useWatchBlockNumber({
     ...({
       config: parameters.config,
       chainId: parameters.chainId,
-      ...(typeof watch === 'object' ? watch : {}),
+      ...(typeof parameters.watch === 'object' ? parameters.watch : {}),
     } as UseWatchBlockNumberParameters),
     enabled: Boolean(
-      (query.enabled ?? true) &&
-        (typeof watch === 'object' ? watch.enabled : watch),
+      (options.enabled ?? true) &&
+        (typeof parameters.watch === 'object'
+          ? parameters.watch.enabled
+          : parameters.watch),
     ),
     onBlockNumber(blockNumber) {
       queryClient.setQueryData(options.queryKey, blockNumber)
     },
   })
-
-  return useQuery({ ...query, ...options })
+  return useQuery(options)
 }

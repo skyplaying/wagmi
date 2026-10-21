@@ -1,28 +1,27 @@
-import {
-  type Config,
-  type ResolvedRegister,
-  type SimulateContractErrorType,
-  type SimulateContractParameters,
+import type {
+  Config,
+  ResolvedRegister,
+  SimulateContractErrorType,
+  SimulateContractParameters,
 } from '@wagmi/core'
-import { type ScopeKeyParameter, type UnionPartial } from '@wagmi/core/internal'
-import {
-  type SimulateContractData,
-  type SimulateContractQueryFnData,
-  type SimulateContractQueryKey,
+import type {
+  ConfigParameter,
+  QueryParameter,
+  ScopeKeyParameter,
+  UnionExactPartial,
+} from '@wagmi/core/internal'
+import type {
+  SimulateContractData,
+  SimulateContractQueryFnData,
 } from '@wagmi/core/query'
-import {
-  type Abi,
-  type Address,
-  type ContractFunctionArgs,
-  type ContractFunctionName,
+import type {
+  Abi,
+  Address,
+  ContractFunctionArgs,
+  ContractFunctionName,
 } from 'viem'
-
-import {
-  type ConfigParameter,
-  type QueryParameter,
-} from '../../types/properties.js'
-import { useAccount } from '../useAccount.js'
 import { useChainId } from '../useChainId.js'
+import { useConfig } from '../useConfig.js'
 import {
   type UseSimulateContractReturnType,
   useSimulateContract,
@@ -53,7 +52,7 @@ export type CreateUseSimulateContractReturnType<
   name extends functionName extends ContractFunctionName<abi, stateMutability>
     ? functionName
     : ContractFunctionName<abi, stateMutability>,
-  args extends ContractFunctionArgs<abi, stateMutability, name>,
+  const args extends ContractFunctionArgs<abi, stateMutability, name>,
   config extends Config = ResolvedRegister['config'],
   chainId extends config['chains'][number]['id'] | undefined = undefined,
   selectData = SimulateContractData<abi, name, args, config, chainId>,
@@ -68,7 +67,7 @@ export type CreateUseSimulateContractReturnType<
           | (chainId extends keyof address ? chainId : never)
           | undefined
       : chainId | number | undefined
-  } & UnionPartial<
+  } & UnionExactPartial<
     // TODO: Take `abi` and `address` from above and omit from below (currently breaks inference)
     SimulateContractParameters<abi, name, args, config, chainId>
   > &
@@ -77,8 +76,8 @@ export type CreateUseSimulateContractReturnType<
     QueryParameter<
       SimulateContractQueryFnData<abi, name, args, config, chainId>,
       SimulateContractErrorType,
-      selectData,
-      SimulateContractQueryKey<abi, name, args, config, chainId>
+      selectData
+      // TODO: Add `SimulateContractQueryKey<abi, name, args, config, chainId>` as 4th type param (currently causes TS2589)
     >,
 ) => UseSimulateContractReturnType<abi, name, args, config, chainId, selectData>
 
@@ -92,30 +91,28 @@ export function createUseSimulateContract<
     | ContractFunctionName<abi, stateMutability>
     | undefined = undefined,
 >(
-  config: CreateUseSimulateContractParameters<abi, address, functionName>,
+  props: CreateUseSimulateContractParameters<abi, address, functionName>,
 ): CreateUseSimulateContractReturnType<abi, address, functionName> {
-  if (config.address !== undefined && typeof config.address === 'object')
+  if (props.address !== undefined && typeof props.address === 'object')
     return (parameters) => {
-      const configChainId = useChainId()
-      const account = useAccount()
+      const config = useConfig(parameters)
+      const configChainId = useChainId({ config })
       const chainId =
-        (parameters as { chainId?: number })?.chainId ??
-        account.chainId ??
-        configChainId
+        (parameters as { chainId?: number })?.chainId ?? configChainId
       return useSimulateContract({
         ...(parameters as any),
-        ...(config.functionName ? { functionName: config.functionName } : {}),
-        address: config.address?.[chainId],
-        abi: config.abi,
+        ...(props.functionName ? { functionName: props.functionName } : {}),
+        address: props.address?.[chainId],
+        abi: props.abi,
       })
     }
 
   return (parameters) => {
     return useSimulateContract({
       ...(parameters as any),
-      ...(config.address ? { address: config.address } : {}),
-      ...(config.functionName ? { functionName: config.functionName } : {}),
-      abi: config.abi,
+      ...(props.address ? { address: props.address } : {}),
+      ...(props.functionName ? { functionName: props.functionName } : {}),
+      abi: props.abi,
     })
   }
 }

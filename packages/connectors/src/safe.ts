@@ -1,10 +1,14 @@
-import { type SafeAppProvider } from '@safe-global/safe-apps-provider'
-import { type Opts } from '@safe-global/safe-apps-sdk'
-import { ProviderNotFoundError, createConnector } from '@wagmi/core'
-import type { Evaluate } from '@wagmi/core/internal'
-import { getAddress } from 'viem'
+import type { SafeAppProvider } from '@safe-global/safe-apps-provider'
+import type { Opts } from '@safe-global/safe-apps-sdk'
+import {
+  type Connector,
+  createConnector,
+  ProviderNotFoundError,
+} from '@wagmi/core'
+import type { Compute } from '@wagmi/core/internal'
+import { getAddress, withTimeout } from 'viem'
 
-export type SafeParameters = Evaluate<
+export type SafeParameters = Compute<
   Opts & {
     /**
      * Connector automatically connects when used as Safe App.
@@ -15,6 +19,13 @@ export type SafeParameters = Evaluate<
      * @default false
      */
     shimDisconnect?: boolean | undefined
+    /**
+     * Timeout in milliseconds for `getInfo` (from the Safe SDK) to resolve.
+     *
+     * `getInfo` does not resolve when not used in Safe App iFrame. This allows the connector to force a timeout.
+     * @default 10
+     */
+    unstable_getInfoTimeout?: number | undefined
   }
 >
 
@@ -23,34 +34,48 @@ export function safe(parameters: SafeParameters = {}) {
   const { shimDisconnect = false } = parameters
 
   type Provider = SafeAppProvider | undefined
-  type Properties = {}
+  type Properties = Record<string, unknown>
   type StorageItem = { 'safe.disconnected': true }
 
   let provider_: Provider | undefined
+
+  let disconnect: Connector['onDisconnect'] | undefined
 
   return createConnector<Provider, Properties, StorageItem>((config) => ({
     id: 'safe',
     name: 'Safe',
     type: safe.type,
-    async connect() {
+    async connect({ withCapabilities } = {}) {
       const provider = await this.getProvider()
       if (!provider) throw new ProviderNotFoundError()
 
       const accounts = await this.getAccounts()
       const chainId = await this.getChainId()
 
-      provider.on('disconnect', this.onDisconnect.bind(this))
+      if (!disconnect) {
+        disconnect = this.onDisconnect.bind(this)
+        provider.on('disconnect', disconnect)
+      }
 
       // Remove disconnected shim if it exists
       if (shimDisconnect) await config.storage?.removeItem('safe.disconnected')
 
-      return { accounts, chainId }
+      return {
+        // TODO(v3): Make `withCapabilities: true` default behavior
+        accounts: (withCapabilities
+          ? accounts.map((address) => ({ address, capabilities: {} }))
+          : accounts) as never,
+        chainId,
+      }
     },
     async disconnect() {
       const provider = await this.getProvider()
       if (!provider) throw new ProviderNotFoundError()
 
-      provider.removeListener('disconnect', this.onDisconnect.bind(this))
+      if (disconnect) {
+        provider.removeListener('disconnect', disconnect)
+        disconnect = undefined
+      }
 
       // Add shim signalling connector is disconnected
       if (shimDisconnect)
@@ -70,24 +95,39 @@ export function safe(parameters: SafeParameters = {}) {
       if (!isIframe) return
 
       if (!provider_) {
-        const { default: SafeAppsSDK } = await import(
-          '@safe-global/safe-apps-sdk'
-        )
-        let SDK: typeof SafeAppsSDK.default
-        if (
-          typeof SafeAppsSDK !== 'function' &&
-          typeof SafeAppsSDK.default === 'function'
-        )
-          SDK = SafeAppsSDK.default
-        else SDK = SafeAppsSDK as unknown as typeof SafeAppsSDK.default
-        const sdk = new SDK(parameters)
+        // safe webpack optional peer dependency dynamic imports
+        try {
+          const { default: SDK } = await import(
+            /* turbopackOptional: true */
+            '@safe-global/safe-apps-sdk'
+          )
+          const sdk = new SDK(parameters)
 
-        const safe = await sdk.safe.getInfo()
-        if (!safe) throw new Error('Could not load Safe information')
-        const { SafeAppProvider } = await import(
-          '@safe-global/safe-apps-provider'
-        )
-        provider_ = new SafeAppProvider(safe, sdk)
+          // `getInfo` hangs when not used in Safe App iFrame
+          // https://github.com/safe-global/safe-apps-sdk/issues/263#issuecomment-1029835840
+          const safe = await withTimeout(() => sdk.safe.getInfo(), {
+            timeout: parameters.unstable_getInfoTimeout ?? 10,
+          })
+          if (!safe) throw new Error('Could not load Safe information')
+          // Unwrapping import for Vite compatibility.
+          // See: https://github.com/vitejs/vite/issues/9703
+          const Provider = await import(
+            /* turbopackOptional: true */
+            '@safe-global/safe-apps-provider'
+          )
+          const SafeAppProvider = (() => {
+            if (
+              typeof Provider.SafeAppProvider !== 'function' &&
+              typeof Provider.default.SafeAppProvider === 'function'
+            )
+              return Provider.default.SafeAppProvider
+            return Provider.SafeAppProvider
+          })()
+          provider_ = new SafeAppProvider(safe, sdk)
+        } catch (error) {
+          // biome-ignore lint/complexity/noUselessCatch: try block marks dependencies as optional for webpack
+          throw error
+        }
       }
       return provider_
     },

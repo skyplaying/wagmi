@@ -1,5 +1,4 @@
-import { type Abi } from 'viem'
-import type { ContractFunctionArgs, ContractFunctionName } from 'viem'
+import type { Abi, ContractFunctionArgs, ContractFunctionName } from 'viem'
 import {
   type ReadContractErrorType as viem_ReadContractErrorType,
   type ReadContractParameters as viem_ReadContractParameters,
@@ -7,8 +6,8 @@ import {
   readContract as viem_readContract,
 } from 'viem/actions'
 
-import { type Config } from '../createConfig.js'
-import { type ChainIdParameter } from '../types/properties.js'
+import type { Config } from '../createConfig.js'
+import type { ChainIdParameter } from '../types/properties.js'
 import { getAction } from '../utils/getAction.js'
 
 export type ReadContractParameters<
@@ -46,7 +45,7 @@ export function readContract<
   config extends Config,
   const abi extends Abi | readonly unknown[],
   functionName extends ContractFunctionName<abi, 'pure' | 'view'>,
-  args extends ContractFunctionArgs<abi, 'pure' | 'view', functionName>,
+  const args extends ContractFunctionArgs<abi, 'pure' | 'view', functionName>,
 >(
   config: config,
   parameters: ReadContractParameters<abi, functionName, args, config>,

@@ -1,4 +1,4 @@
-import { type SignMessageErrorType } from '@wagmi/core'
+import type { SignMessageErrorType } from '@wagmi/core'
 import type { SignMessageVariables } from '@wagmi/core/query'
 import { expectTypeOf, test } from 'vitest'
 
@@ -8,7 +8,7 @@ const message = 'hello world'
 const contextValue = { foo: 'bar' } as const
 
 test('context', () => {
-  const { context, data, error, signMessage, variables } = useSignMessage({
+  const signMessage = useSignMessage({
     mutation: {
       onMutate(variables) {
         expectTypeOf(variables).toEqualTypeOf<SignMessageVariables>()
@@ -22,7 +22,7 @@ test('context', () => {
       onSuccess(data, variables, context) {
         expectTypeOf(variables).toEqualTypeOf<SignMessageVariables>()
         expectTypeOf(data).toEqualTypeOf<`0x${string}`>()
-        expectTypeOf(context).toEqualTypeOf<typeof contextValue | undefined>()
+        expectTypeOf(context).toEqualTypeOf<typeof contextValue>()
       },
       onSettled(data, error, variables, context) {
         expectTypeOf(data).toEqualTypeOf<`0x${string}` | undefined>()
@@ -33,12 +33,16 @@ test('context', () => {
     },
   })
 
-  expectTypeOf(data).toEqualTypeOf<`0x${string}` | undefined>()
-  expectTypeOf(error).toEqualTypeOf<SignMessageErrorType | null>()
-  expectTypeOf(variables).toEqualTypeOf<SignMessageVariables | undefined>()
-  expectTypeOf(context).toEqualTypeOf<typeof contextValue | undefined>()
+  expectTypeOf(signMessage.data).toEqualTypeOf<`0x${string}` | undefined>()
+  expectTypeOf(signMessage.error).toEqualTypeOf<SignMessageErrorType | null>()
+  expectTypeOf(signMessage.variables).toEqualTypeOf<
+    SignMessageVariables | undefined
+  >()
+  expectTypeOf(signMessage.context).toEqualTypeOf<
+    typeof contextValue | undefined
+  >()
 
-  signMessage(
+  signMessage.mutate(
     { message },
     {
       onError(error, variables, context) {

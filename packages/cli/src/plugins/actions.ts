@@ -1,7 +1,7 @@
 import { pascalCase } from 'change-case'
 
-import { type Contract, type Plugin } from '../config.js'
-import { type Evaluate, type RequiredBy } from '../types.js'
+import type { Contract, Plugin } from '../config.js'
+import type { Compute, RequiredBy } from '../types.js'
 import { getAddressDocString } from '../utils/getAddressDocString.js'
 import { getIsPackageInstalled } from '../utils/packages.js'
 
@@ -16,7 +16,7 @@ export type ActionsConfig = {
   overridePackageName?: '@wagmi/core' | 'wagmi' | undefined
 }
 
-type ActionsResult = Evaluate<RequiredBy<Plugin, 'run'>>
+type ActionsResult = Compute<RequiredBy<Plugin, 'run'>>
 
 export function actions(config: ActionsConfig = {}): ActionsResult {
   return {
@@ -52,7 +52,7 @@ export function actions(config: ActionsConfig = {}): ActionsResult {
           }
         }
 
-        let innerContent
+        let innerContent: string
         if (contract.meta.addressName)
           innerContent = `abi: ${contract.meta.abiName}, address: ${contract.meta.addressName}`
         else innerContent = `abi: ${contract.meta.abiName}`
@@ -297,7 +297,7 @@ function getActionName(
   const ContractName = pascalCase(contractName)
   const ItemName = itemName ? pascalCase(itemName) : undefined
 
-  let actionName
+  let actionName: string
   if (typeof config.getActionName === 'function')
     actionName = config.getActionName({
       type,

@@ -1,7 +1,7 @@
 {
   "name": "wagmi",
   "description": "React Hooks for Ethereum",
-  "version": "2.5.13",
+  "version": "3.7.8",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -9,11 +9,11 @@
     "directory": "packages/react"
   },
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:esm+types",
+    "build": "pnpm run build:esm+types",
     "build:esm+types": "tsc --project tsconfig.build.json --outDir ./dist/esm --declaration --declarationMap --declarationDir ./dist/types",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo actions chains codegen connectors query",
-    "test:build": "publint --strict",
-    "typecheck": "tsc --noEmit"
+    "check:types": "tsgo --noEmit",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo actions chains codegen connectors query tempo",
+    "test:build": "publint --strict && attw --pack --ignore-rules cjs-resolves-to-esm"
   },
   "files": [
     "dist/**",
@@ -25,7 +25,8 @@
     "/chains",
     "/codegen",
     "/connectors",
-    "/query"
+    "/query",
+    "/tempo"
   ],
   "sideEffects": false,
   "type": "module",
@@ -57,6 +58,10 @@
       "types": "./dist/types/exports/query.d.ts",
       "default": "./dist/esm/exports/query.js"
     },
+    "./tempo": {
+      "types": "./dist/types/exports/tempo.d.ts",
+      "default": "./dist/esm/exports/tempo.js"
+    },
     "./package.json": "./package.json"
   },
   "typesVersions": {
@@ -75,13 +80,16 @@
       ],
       "query": [
         "./dist/types/exports/query.d.ts"
+      ],
+      "tempo": [
+        "./dist/types/exports/tempo.d.ts"
       ]
     }
   },
   "peerDependencies": {
     "@tanstack/react-query": ">=5.0.0",
     "react": ">=18",
-    "typescript": ">=5.0.4",
+    "typescript": ">=5.9.3",
     "viem": "2.x"
   },
   "peerDependenciesMeta": {
@@ -92,16 +100,15 @@
   "dependencies": {
     "@wagmi/connectors": "workspace:*",
     "@wagmi/core": "workspace:*",
-    "use-sync-external-store": "1.2.0"
+    "use-sync-external-store": "1.4.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": ">=5.0.0",
-    "@testing-library/react": ">=14.0.0",
-    "@types/react": ">=18",
-    "@types/react-dom": ">=18",
-    "@types/use-sync-external-store": "^0.0.3",
-    "react": ">=18",
-    "react-dom": ">=18"
+    "@tanstack/react-query": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/use-sync-external-store": "^0.0.6",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "contributors": [
     "awkweb.eth <t@wevm.dev>",

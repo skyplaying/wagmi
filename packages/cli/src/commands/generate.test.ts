@@ -1,5 +1,5 @@
+import { readFile } from 'node:fs/promises'
 import dedent from 'dedent'
-import { readFile } from 'fs-extra'
 import { resolve } from 'pathe'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
@@ -43,15 +43,15 @@ test('generates output', async () => {
   await generate()
 
   expect(console.formatted).toMatchInlineSnapshot(`
-      "- Validating plugins
-      ✔ Validating plugins
-      - Resolving contracts
-      ✔ Resolving contracts
-      - Running plugins
-      ✔ Running plugins
-      - Writing to generated.js
-      ✔ Writing to generated.js"
-    `)
+    "- Validating plugins
+    √ Validating plugins
+    - Resolving contracts
+    √ Resolving contracts
+    - Running plugins
+    √ Running plugins
+    - Writing to generated.js
+    √ Writing to generated.js"
+  `)
 })
 
 test('generates typescript output', async () => {
@@ -77,15 +77,15 @@ test('generates typescript output', async () => {
   await generate()
 
   expect(console.formatted).toMatchInlineSnapshot(`
-      "- Validating plugins
-      ✔ Validating plugins
-      - Resolving contracts
-      ✔ Resolving contracts
-      - Running plugins
-      ✔ Running plugins
-      - Writing to generated.ts
-      ✔ Writing to generated.ts"
-    `)
+    "- Validating plugins
+    √ Validating plugins
+    - Resolving contracts
+    √ Resolving contracts
+    - Running plugins
+    √ Running plugins
+    - Writing to generated.ts
+    √ Writing to generated.ts"
+  `)
   await expect(typecheck(paths.tsconfig)).resolves.toMatchInlineSnapshot('""')
 })
 
@@ -124,15 +124,15 @@ test('generates output with plugin', async () => {
   await generate()
 
   expect(console.formatted).toMatchInlineSnapshot(`
-      "- Validating plugins
-      ✔ Validating plugins
-      - Resolving contracts
-      ✔ Resolving contracts
-      - Running plugins
-      ✔ Running plugins
-      - Writing to generated.ts
-      ✔ Writing to generated.ts"
-    `)
+    "- Validating plugins
+    √ Validating plugins
+    - Resolving contracts
+    √ Resolving contracts
+    - Running plugins
+    √ Running plugins
+    - Writing to generated.ts
+    √ Writing to generated.ts"
+  `)
   /* eslint-disable no-irregular-whitespace */
   await expect(
     readFile(resolve(dir, 'generated.ts'), 'utf8'),
@@ -168,9 +168,9 @@ test('behavior: invalid cli options', async () => {
       config: 1,
     }),
   ).rejects.toThrowErrorMatchingInlineSnapshot(`
-        "Invalid option
-        - Expected string, received number at \`config\`"
-      `)
+    [Error: Invalid option
+    - Invalid input: expected string, received number at \`config\`]
+  `)
 })
 
 test('behavior: config not found', async () => {
@@ -179,7 +179,7 @@ test('behavior: config not found', async () => {
   spy.mockImplementation(() => dir)
 
   await expect(generate()).rejects.toThrowErrorMatchingInlineSnapshot(
-    '"Config not found"',
+    '[Error: Config not found]',
   )
 })
 
@@ -228,7 +228,7 @@ test('behavior: config out not unique', async () => {
   spy.mockImplementation(() => dir)
 
   await expect(generate()).rejects.toThrowErrorMatchingInlineSnapshot(
-    '"out \\"generated.ts\\" must be unique."',
+    `[Error: out "generated.ts" must be unique.]`,
   )
 })
 
@@ -256,7 +256,7 @@ test('behavior: config contract names not unique', async () => {
   spy.mockImplementation(() => dir)
 
   await expect(generate()).rejects.toThrowErrorMatchingInlineSnapshot(
-    '"Contract name \\"Foo\\" must be unique."',
+    `[Error: Contract name "Foo" must be unique.]`,
   )
 })
 
@@ -273,12 +273,12 @@ test('behavior: displays message if no contracts found', async () => {
 
   expect(console.formatted).toMatchInlineSnapshot(
     `
-          "- Validating plugins
-          ✔ Validating plugins
-          - Resolving contracts
-          ✖ Resolving contracts
-          No contracts found."
-        `,
+    "- Validating plugins
+    √ Validating plugins
+    - Resolving contracts
+    × Resolving contracts
+    No contracts found."
+  `,
   )
 })
 
@@ -307,9 +307,9 @@ test('behavior: throws when abi is invalid', async () => {
   spy.mockImplementation(() => dir)
 
   await expect(generate()).rejects.toThrowErrorMatchingInlineSnapshot(`
-          "Invalid ABI for contract \\"Foo\\"
-          - Invalid input at \`[0]\`"
-        `)
+    [Error: Invalid ABI for contract "Foo"
+    - Invalid input at \`[0]\`]
+  `)
 })
 
 test('behavior: throws when address is invalid', async () => {
@@ -333,9 +333,9 @@ test('behavior: throws when address is invalid', async () => {
   spy.mockImplementation(() => dir)
 
   await expect(generate()).rejects.toThrowErrorMatchingInlineSnapshot(`
-          "Invalid address for contract \\"Foo\\"
-          - Invalid address"
-        `)
+    [Error: Invalid address for contract "Foo"
+    - Invalid input]
+  `)
 })
 
 test('behavior: throws when multichain address is invalid', async () => {
@@ -362,9 +362,9 @@ test('behavior: throws when multichain address is invalid', async () => {
   spy.mockImplementation(() => dir)
 
   await expect(generate()).rejects.toThrowErrorMatchingInlineSnapshot(`
-          "Invalid address for contract \\"Foo\\"
-          - Invalid address at \`5\`"
-        `)
+    [Error: Invalid address for contract "Foo"
+    - Invalid address at \`5\`]
+  `)
 })
 
 test('behavior: displays message if using --watch flag without watchers configured', async () => {
@@ -389,16 +389,16 @@ test('behavior: displays message if using --watch flag without watchers configur
   await generate({ watch: true })
 
   expect(console.formatted).toMatchInlineSnapshot(`
-          "- Validating plugins
-          ✔ Validating plugins
-          - Resolving contracts
-          ✔ Resolving contracts
-          - Running plugins
-          ✔ Running plugins
-          - Writing to generated.ts
-          ✔ Writing to generated.ts
-          Used --watch flag, but no plugins are watching."
-        `)
+    "- Validating plugins
+    √ Validating plugins
+    - Resolving contracts
+    √ Resolving contracts
+    - Running plugins
+    √ Running plugins
+    - Writing to generated.ts
+    √ Writing to generated.ts
+    Used --watch flag, but no plugins are watching."
+  `)
 })
 
 test.todo('behavior: save config file logs change')

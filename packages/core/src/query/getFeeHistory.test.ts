@@ -11,6 +11,7 @@ test('default', async () => {
     }),
   ).toMatchInlineSnapshot(`
     {
+      "enabled": true,
       "queryFn": [Function],
       "queryKey": [
         "feeHistory",
@@ -35,6 +36,7 @@ test('parameters: chainId', async () => {
     }),
   ).toMatchInlineSnapshot(`
     {
+      "enabled": true,
       "queryFn": [Function],
       "queryKey": [
         "feeHistory",
@@ -60,6 +62,7 @@ test('parameters: blockNumber', async () => {
     }),
   ).toMatchInlineSnapshot(`
     {
+      "enabled": true,
       "queryFn": [Function],
       "queryKey": [
         "feeHistory",
@@ -85,6 +88,7 @@ test('parameters: blockTag', async () => {
     }),
   ).toMatchInlineSnapshot(`
     {
+      "enabled": true,
       "queryFn": [Function],
       "queryKey": [
         "feeHistory",
@@ -99,4 +103,30 @@ test('parameters: blockTag', async () => {
       ],
     }
   `)
+})
+
+test('behavior: blockCount is required', async () => {
+  const options = getFeeHistoryQueryOptions(config, {})
+  await expect(
+    options.queryFn({
+      queryKey: options.queryKey,
+      signal: new AbortSignal(),
+      meta: undefined,
+    }),
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    '[Error: blockCount is required]',
+  )
+})
+
+test('behavior: rewardPercentiles is required', async () => {
+  const options = getFeeHistoryQueryOptions(config, { blockCount: 4 })
+  await expect(
+    options.queryFn({
+      queryKey: options.queryKey,
+      signal: new AbortSignal(),
+      meta: undefined,
+    }),
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    '[Error: rewardPercentiles is required]',
+  )
 })

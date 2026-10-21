@@ -1,19 +1,18 @@
-import {
-  type Connector,
-  type CreateConnectorFn,
-  type ReconnectErrorType,
+import type {
+  Connector,
+  CreateConnectorFn,
+  ReconnectErrorType,
 } from '@wagmi/core'
 import { config } from '@wagmi/test'
-import { expectTypeOf, test } from 'vitest'
-
 import type { Address } from 'viem'
+import { expectTypeOf, test } from 'vitest'
 import { useReconnect } from './useReconnect.js'
 
 const connectors = [config.connectors[0]!]
 const contextValue = { foo: 'bar' } as const
 
 test('context', () => {
-  const { context, data, error, reconnect, variables } = useReconnect({
+  const reconnect = useReconnect({
     mutation: {
       onMutate(variables) {
         expectTypeOf(variables).toEqualTypeOf<
@@ -54,7 +53,7 @@ test('context', () => {
             connector: Connector
           }[]
         >()
-        expectTypeOf(context).toEqualTypeOf<typeof contextValue | undefined>()
+        expectTypeOf(context).toEqualTypeOf<typeof contextValue>()
       },
       onSettled(data, error, variables, context) {
         expectTypeOf(data).toEqualTypeOf<
@@ -79,7 +78,7 @@ test('context', () => {
     },
   })
 
-  expectTypeOf(data).toEqualTypeOf<
+  expectTypeOf(reconnect.data).toEqualTypeOf<
     | {
         accounts: readonly [Address, ...Address[]]
         chainId: number
@@ -87,16 +86,18 @@ test('context', () => {
       }[]
     | undefined
   >()
-  expectTypeOf(error).toEqualTypeOf<ReconnectErrorType | null>()
-  expectTypeOf(variables).toEqualTypeOf<
+  expectTypeOf(reconnect.error).toEqualTypeOf<ReconnectErrorType | null>()
+  expectTypeOf(reconnect.variables).toEqualTypeOf<
     | {
         connectors?: readonly (CreateConnectorFn | Connector)[] | undefined
       }
     | undefined
   >()
-  expectTypeOf(context).toEqualTypeOf<typeof contextValue | undefined>()
+  expectTypeOf(reconnect.context).toEqualTypeOf<
+    typeof contextValue | undefined
+  >()
 
-  reconnect(
+  reconnect.mutate(
     { connectors },
     {
       onError(error, variables, context) {
@@ -121,11 +122,11 @@ test('context', () => {
           | undefined
         >()
         expectTypeOf(data).toEqualTypeOf<
-          | {
-              accounts: readonly [Address, ...Address[]]
-              chainId: number
-              connector: Connector
-            }[]
+          {
+            accounts: readonly [Address, ...Address[]]
+            chainId: number
+            connector: Connector
+          }[]
         >()
         expectTypeOf(context).toEqualTypeOf<typeof contextValue>()
       },

@@ -1,6 +1,6 @@
 'use client'
 
-import { type ResolvedRegister, type State, hydrate } from '@wagmi/core'
+import { hydrate, type ResolvedRegister, type State } from '@wagmi/core'
 import { type ReactElement, useEffect, useRef } from 'react'
 
 export type HydrateProps = {
@@ -22,7 +22,7 @@ export function Hydrate(parameters: React.PropsWithChildren<HydrateProps>) {
 
   // Hydrate for SSR
   const active = useRef(true)
-  // biome-ignore lint/nursery/useExhaustiveDependencies:
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `queryKey` not required
   useEffect(() => {
     if (!active.current) return
     if (!config._internal.ssr) return

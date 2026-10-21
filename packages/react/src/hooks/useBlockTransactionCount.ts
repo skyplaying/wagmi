@@ -1,37 +1,27 @@
 'use client'
-
-import {
-  type Config,
-  type GetBlockTransactionCountErrorType,
-  type ResolvedRegister,
+import type {
+  Config,
+  GetBlockTransactionCountErrorType,
+  ResolvedRegister,
 } from '@wagmi/core'
-import { type UnionEvaluate } from '@wagmi/core/internal'
+import type { ConfigParameter, UnionCompute } from '@wagmi/core/internal'
 import {
   type GetBlockTransactionCountData,
   type GetBlockTransactionCountOptions,
-  type GetBlockTransactionCountQueryFnData,
-  type GetBlockTransactionCountQueryKey,
   getBlockTransactionCountQueryOptions,
 } from '@wagmi/core/query'
-
-import type { ConfigParameter, QueryParameter } from '../types/properties.js'
 import { type UseQueryReturnType, useQuery } from '../utils/query.js'
 import { useChainId } from './useChainId.js'
 import { useConfig } from './useConfig.js'
 
 export type UseBlockTransactionCountParameters<
   config extends Config = Config,
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   selectData = GetBlockTransactionCountData,
-> = UnionEvaluate<
-  GetBlockTransactionCountOptions<config, chainId> &
-    ConfigParameter<config> &
-    QueryParameter<
-      GetBlockTransactionCountQueryFnData,
-      GetBlockTransactionCountErrorType,
-      selectData,
-      GetBlockTransactionCountQueryKey<config, chainId>
-    >
+> = UnionCompute<
+  GetBlockTransactionCountOptions<config, chainId, selectData> &
+    ConfigParameter<config>
 >
 
 export type UseBlockTransactionCountReturnType<
@@ -41,7 +31,8 @@ export type UseBlockTransactionCountReturnType<
 /** https://wagmi.sh/react/api/hooks/useBlockTransactionCount */
 export function useBlockTransactionCount<
   config extends Config = ResolvedRegister['config'],
-  chainId extends config['chains'][number]['id'] = config['chains'][number]['id'],
+  chainId extends
+    config['chains'][number]['id'] = config['chains'][number]['id'],
   selectData = GetBlockTransactionCountData,
 >(
   parameters: UseBlockTransactionCountParameters<
@@ -50,16 +41,11 @@ export function useBlockTransactionCount<
     selectData
   > = {},
 ): UseBlockTransactionCountReturnType<selectData> {
-  const { query = {} } = parameters
-
   const config = useConfig(parameters)
-  const configChainId = useChainId()
-  const chainId = parameters.chainId ?? configChainId
-
+  const chainId = useChainId({ config })
   const options = getBlockTransactionCountQueryOptions(config, {
     ...parameters,
-    chainId,
+    chainId: parameters.chainId ?? chainId,
   })
-
-  return useQuery({ ...query, ...options })
+  return useQuery(options)
 }

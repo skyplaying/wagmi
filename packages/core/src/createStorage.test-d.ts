@@ -1,7 +1,6 @@
 import { expectTypeOf, test } from 'vitest'
-import { createStorage } from './createStorage.js'
-
 import type { Connection } from './createConfig.js'
+import { createStorage } from './createStorage.js'
 
 test('getItem', () => {
   const storage = createStorage({ storage: localStorage })
@@ -12,8 +11,7 @@ test('getItem', () => {
   expectTypeOf(storage.getItem('recentConnectorId', 'foo')).toEqualTypeOf<
     string | Promise<string>
   >()
-  // @ts-expect-error unknown key
-  storage.getItem('foo')
+  expectTypeOf(storage.getItem('foo')).toEqualTypeOf<unknown>()
   // @ts-expect-error incorrect argument type
   storage.getItem('recentConnectorId', 1n)
 
@@ -21,7 +19,7 @@ test('getItem', () => {
     | {
         chainId?: number | undefined
         connections?: Map<string, Connection> | undefined
-        current?: string | undefined
+        current?: string | null | undefined
         status?:
           | 'connected'
           | 'connecting'
@@ -33,7 +31,7 @@ test('getItem', () => {
     | Promise<{
         chainId?: number | undefined
         connections?: Map<string, Connection> | undefined
-        current?: string | undefined
+        current?: string | null | undefined
         status?:
           | 'connected'
           | 'connecting'
@@ -60,4 +58,16 @@ test('setItem', () => {
   storage.setItem('recentConnectorId', 'foo')
   // @ts-expect-error incorrect argument type
   storage.setItem('recentConnectorId', 1n)
+})
+
+test('serialize/deserialize types', () => {
+  createStorage({
+    deserialize(value) {
+      return value
+    },
+    serialize(value) {
+      return value
+    },
+    storage: localStorage,
+  })
 })

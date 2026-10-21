@@ -1,5 +1,5 @@
-import { abi, address, chain, config } from '@wagmi/test'
-import { type WatchEventOnLogsParameter } from 'viem'
+import { abi, address, chain, config, wait } from '@wagmi/test'
+import type { WatchEventOnLogsParameter } from 'viem'
 import { test } from 'vitest'
 
 import { createWatchContractEvent } from './createWatchContractEvent.js'
@@ -17,7 +17,9 @@ test('default', async () => {
       logs = logs.concat(next)
     },
   })
+  await wait(500)
   unwatch()
+  await wait(500)
 })
 
 test('multichain', async () => {
@@ -37,5 +39,7 @@ test('multichain', async () => {
       logs = logs.concat(next)
     },
   })
+  await wait(500)
   unwatch()
+  await wait(500)
 })

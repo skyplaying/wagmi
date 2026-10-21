@@ -1,44 +1,34 @@
 'use client'
-
 import { useMutation } from '@tanstack/react-query'
-import { type SignMessageErrorType } from '@wagmi/core'
-import type { Evaluate } from '@wagmi/core/internal'
+import type { SignMessageErrorType } from '@wagmi/core'
+import type { Compute, ConfigParameter } from '@wagmi/core/internal'
 import {
   type SignMessageData,
   type SignMessageMutate,
   type SignMessageMutateAsync,
+  type SignMessageOptions,
   type SignMessageVariables,
   signMessageMutationOptions,
 } from '@wagmi/core/query'
-
-import type { ConfigParameter } from '../types/properties.js'
-import type {
-  UseMutationParameters,
-  UseMutationReturnType,
-} from '../utils/query.js'
+import type { UseMutationReturnType } from '../utils/query.js'
 import { useConfig } from './useConfig.js'
 
-export type UseSignMessageParameters<context = unknown> = Evaluate<
-  ConfigParameter & {
-    mutation?:
-      | UseMutationParameters<
-          SignMessageData,
-          SignMessageErrorType,
-          SignMessageVariables,
-          context
-        >
-      | undefined
-  }
+export type UseSignMessageParameters<context = unknown> = Compute<
+  ConfigParameter & SignMessageOptions<context>
 >
 
-export type UseSignMessageReturnType<context = unknown> = Evaluate<
+export type UseSignMessageReturnType<context = unknown> = Compute<
   UseMutationReturnType<
     SignMessageData,
     SignMessageErrorType,
     SignMessageVariables,
-    context
+    context,
+    SignMessageMutate<context>,
+    SignMessageMutateAsync<context>
   > & {
+    /** @deprecated use `mutate` instead */
     signMessage: SignMessageMutate<context>
+    /** @deprecated use `mutateAsync` instead */
     signMessageAsync: SignMessageMutateAsync<context>
   }
 >
@@ -47,19 +37,13 @@ export type UseSignMessageReturnType<context = unknown> = Evaluate<
 export function useSignMessage<context = unknown>(
   parameters: UseSignMessageParameters<context> = {},
 ): UseSignMessageReturnType<context> {
-  const { mutation } = parameters
-
   const config = useConfig(parameters)
-
-  const mutationOptions = signMessageMutationOptions(config)
-  const { mutate, mutateAsync, ...result } = useMutation({
-    ...mutation,
-    ...mutationOptions,
-  })
-
+  const options = signMessageMutationOptions(config, parameters)
+  const mutation = useMutation(options)
+  type Return = UseSignMessageReturnType<context>
   return {
-    ...result,
-    signMessage: mutate,
-    signMessageAsync: mutateAsync,
+    ...(mutation as Return),
+    signMessage: mutation.mutate as Return['mutate'],
+    signMessageAsync: mutation.mutateAsync as Return['mutateAsync'],
   }
 }

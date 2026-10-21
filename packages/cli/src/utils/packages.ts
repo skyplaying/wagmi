@@ -1,6 +1,6 @@
-import { promises as fs } from 'fs'
-import { resolve } from 'path'
-import { execa } from 'execa'
+import { execSync } from 'node:child_process'
+import { promises as fs } from 'node:fs'
+import { resolve } from 'node:path'
 
 export async function getIsPackageInstalled(parameters: {
   packageName: string
@@ -9,11 +9,27 @@ export async function getIsPackageInstalled(parameters: {
   const { packageName, cwd = process.cwd() } = parameters
   try {
     const packageManager = await getPackageManager()
-    const command =
-      packageManager === 'yarn' ? ['why', packageName] : ['ls', packageName]
-    const { stdout } = await execa(packageManager, command, { cwd })
-    if (stdout !== '') return true
-    return false
+    const command = (() => {
+      switch (packageManager) {
+        case 'yarn':
+          return ['why', packageName]
+        case 'bun':
+          return ['pm', 'ls', '--all']
+        default:
+          return ['ls', packageName]
+      }
+    })()
+
+    const result = execSync(`${packageManager} ${command.join(' ')}`, {
+      cwd,
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    })
+
+    // For Bun, we need to check if the package name is in the output
+    if (packageManager === 'bun') return result.includes(packageName)
+
+    return result !== ''
   } catch (_error) {
     return false
   }
@@ -26,6 +42,7 @@ export async function getPackageManager(executable?: boolean | undefined) {
     // The yarn@^3 user agent includes npm, so yarn must be checked first.
     if (userAgent.includes('yarn')) return 'yarn'
     if (userAgent.includes('npm')) return executable ? 'npx' : 'npm'
+    if (userAgent.includes('bun')) return executable ? 'bunx' : 'bun'
   }
 
   const packageManager = await detect()
@@ -56,21 +73,21 @@ async function detect(
 
 const cache = new Map()
 
-function hasGlobalInstallation(pm: PackageManager): Promise<boolean> {
+function hasGlobalInstallation(pm: PackageManager): boolean {
   const key = `has_global_${pm}`
-  if (cache.has(key)) {
-    return Promise.resolve(cache.get(key))
-  }
+  if (cache.has(key)) return cache.get(key)
 
-  return execa(pm, ['--version'])
-    .then((res) => {
-      return /^\d+.\d+.\d+$/.test(res.stdout)
+  try {
+    const result = execSync(`${pm} --version`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
     })
-    .then((value) => {
-      cache.set(key, value)
-      return value
-    })
-    .catch(() => false)
+    const isGlobal = /^\d+.\d+.\d+$/.test(result)
+    cache.set(key, isGlobal)
+    return isGlobal
+  } catch {
+    return false
+  }
 }
 
 function getTypeofLockFile(cwd = '.'): Promise<PackageManager | null> {
